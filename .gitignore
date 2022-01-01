@@ -1,3 +1,7 @@
+.idea
+*.log
+log.txt
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -13,3 +17,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+app/vendor
+
+
+###### web ######
+
