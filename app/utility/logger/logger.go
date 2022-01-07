@@ -33,6 +33,7 @@ func initLogger(name string, days int) (*logrus.Logger, error) {
 		return nil, err
 	}
 	logger := logrus.New()
+	// TODO: 修改机制，如果文件初始化失败，使用标准输出。而不是返回错误。
 	logger.SetOutput(writer)
 	return logger, nil
 }
