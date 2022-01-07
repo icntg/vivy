@@ -2,7 +2,6 @@ package logger
 
 import (
 	"app/utility/config"
-	"app/utility/datetime"
 	"fmt"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
@@ -18,36 +17,56 @@ var (
 	secureLogger *logrus.Logger = nil
 )
 
+func initLogger(name string, days int) (*logrus.Logger, error) {
+	logNameSplit := fmt.Sprintf("%s-%s.log", name, "%Y%m%d")
+	logNameLink := name + ".log"
+	writer, err := rotatelogs.New(
+		filepath.Join(config.GetGlobalConfig().Logger.Path, logNameSplit),
+		rotatelogs.WithLinkName(filepath.Join(config.GetGlobalConfig().Logger.Path, logNameLink)),
+		rotatelogs.WithMaxAge(time.Duration(days*24)*time.Hour),
+		rotatelogs.WithRotationCount(30),
+		rotatelogs.WithRotationTime(time.Minute),
+	)
+	if nil != err {
+		log.SetOutput(os.Stderr)
+		log.Printf("Failed to create rotatelogs [%s]: %v\n", logNameLink, err)
+		return nil, err
+	}
+	logger := logrus.New()
+	logger.SetOutput(writer)
+	return logger, nil
+}
+
 func GetOutputLogger() (*logrus.Logger, error) {
 	if nil == outputLogger {
-		logFilePath := config.GetGlobalConfig().Logger.Path
-		d0, d1, w := datetime.GetStringWeekOfYear(time.Now())
-		logFileName := fmt.Sprintf("output-%dW%s(%s-%s)", time.Now().Year(), w, d0, d1)
-		logFileName = filepath.Join(logFilePath, logFileName)
-
-		writer, err := rotatelogs.New(
-			filepath.Join(config.GetGlobalConfig().Logger.Path, "output-%Y%m%d.log"),
-			rotatelogs.WithLinkName(filepath.Join(config.GetGlobalConfig().Logger.Path, "output.log")),
-			rotatelogs.WithMaxAge(time.Duration(7*24)*time.Hour),
-			rotatelogs.WithRotationCount(30),
-			rotatelogs.WithRotationTime(time.Minute),
-		)
+		var err error
+		outputLogger, err = initLogger("output", 7)
 		if nil != err {
-			log.SetOutput(os.Stderr)
-			log.Printf("Failed to create rotatelogs [output.log]: %v\n", err)
+			return nil, err
 		}
-		outputLogger = logrus.New()
-		outputLogger.SetOutput(writer)
-
 	}
 	return outputLogger, nil
 }
 
 func GetAccessLogger() (*logrus.Logger, error) {
+	if nil == accessLogger {
+		var err error
+		accessLogger, err = initLogger("access", 7)
+		if nil != err {
+			return nil, err
+		}
+	}
 	return accessLogger, nil
 }
 
 func GetSecureLogger() (*logrus.Logger, error) {
+	if nil == secureLogger {
+		var err error
+		secureLogger, err = initLogger("secure", 30)
+		if nil != err {
+			return nil, err
+		}
+	}
 	return secureLogger, nil
 }
 
