@@ -1,7 +1,7 @@
 package config
 
 import (
-	"app/utility/copy"
+	"app/utility/common"
 	"app/utility/errno"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -121,7 +121,7 @@ func GetGlobalConfig() *Config {
 	log.SetOutput(os.Stdout)
 	log.Printf("Try to use default config ...\n")
 	var gc1 Config
-	err = copy.DeepCopyByGob(gc1, defaultConfig)
+	err = common.DeepCopyByGob(gc1, defaultConfig)
 	if nil != err {
 		globalConfig = &gc1
 		return globalConfig

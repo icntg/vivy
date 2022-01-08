@@ -23,7 +23,7 @@ func initLogger(name string, days int) *logrus.Logger {
 	logNameLink := name + ".log"
 
 	var logWriter io.Writer
-	logWriter, err := rotatelogs.New(
+	rotateLogger, err := rotatelogs.New(
 		filepath.Join(config.GetGlobalConfig().Logger.Path, logNameSplit),
 		rotatelogs.WithLinkName(filepath.Join(config.GetGlobalConfig().Logger.Path, logNameLink)),
 		//rotatelogs.WithMaxAge(time.Duration(days*24)*time.Hour),
@@ -34,6 +34,10 @@ func initLogger(name string, days int) *logrus.Logger {
 		log.SetOutput(os.Stderr)
 		log.Printf("Failed to create rotatelogs [%s]: %v\n", logNameLink, err)
 		logWriter = os.Stderr // 如果文件初始化失败，则使用stderr输出
+	} else if config.GetGlobalConfig().Debug {
+		logWriter = io.MultiWriter(rotateLogger, os.Stdout)
+	} else {
+		logWriter = rotateLogger
 	}
 
 	logger := logrus.New()
