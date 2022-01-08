@@ -24,6 +24,6 @@ service:
     port: 8088
 
 logger:
-  path: "./"
+  path: "./logs"
 
 debug: true

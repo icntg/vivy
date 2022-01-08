@@ -2,6 +2,8 @@ package main
 
 import (
 	"app/utility/config"
+	"app/utility/errno"
+	"app/utility/logger"
 	utilityPath "app/utility/path"
 	"flag"
 	"fmt"
@@ -18,7 +20,7 @@ func main() {
 	// 命令行参数处理、加载配置文件
 	err = initParam()
 	if nil != err {
-		os.Exit(-1)
+		os.Exit(errno.ErrorInitParam)
 		return
 	}
 	gConfig := config.GetGlobalConfig()
@@ -26,7 +28,7 @@ func main() {
 	// 初始化日志模块
 	err = initLogger()
 	if nil != err {
-		os.Exit(-2)
+		os.Exit(errno.ErrorInitLogger)
 		return
 	}
 
@@ -35,8 +37,11 @@ func main() {
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	engine := gin.Default()
+	//engine := gin.Default()
+	engine := gin.New()
+	engine.Use(logger.Middleware()).Use(gin.Recovery())
 	addRoute(engine)
+	//engine.Use(middleware.LoggerMiddleware())
 
 	serviceHostPort := fmt.Sprintf(
 		"%s:%d",
@@ -44,7 +49,7 @@ func main() {
 		gConfig.Service.HTTP.Port)
 	err = engine.Run(serviceHostPort)
 	if nil != err {
-		os.Exit(-3)
+		os.Exit(errno.ErrorStartGinService)
 		return
 	}
 }
@@ -112,6 +117,9 @@ func initParam() error {
 }
 
 func initLogger() error {
+	_ = logger.GetOutputLogger()
+	_ = logger.GetAccessLogger()
+	_ = logger.GetSecureLogger()
 	return nil
 }
 

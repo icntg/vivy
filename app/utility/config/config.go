@@ -46,7 +46,7 @@ var defaultConfig = Config{
 		},
 	},
 	LoggerConfig{
-		"./",
+		"./logs",
 	},
 	false,
 }
@@ -152,5 +152,5 @@ func GenerateTemplate(filename string) error {
 	if nil != err {
 		return err
 	}
-	return ioutil.WriteFile(filename, data, 0644)
+	return ioutil.WriteFile(filename, data, 0o644)
 }

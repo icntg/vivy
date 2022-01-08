@@ -5,6 +5,7 @@ import (
 	"fmt"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,58 +18,54 @@ var (
 	secureLogger *logrus.Logger = nil
 )
 
-func initLogger(name string, days int) (*logrus.Logger, error) {
+func initLogger(name string, days int) *logrus.Logger {
 	logNameSplit := fmt.Sprintf("%s-%s.log", name, "%Y%m%d")
 	logNameLink := name + ".log"
-	writer, err := rotatelogs.New(
+
+	var logWriter io.Writer
+	logWriter, err := rotatelogs.New(
 		filepath.Join(config.GetGlobalConfig().Logger.Path, logNameSplit),
 		rotatelogs.WithLinkName(filepath.Join(config.GetGlobalConfig().Logger.Path, logNameLink)),
-		rotatelogs.WithMaxAge(time.Duration(days*24)*time.Hour),
+		//rotatelogs.WithMaxAge(time.Duration(days*24)*time.Hour),
 		rotatelogs.WithRotationCount(30),
-		rotatelogs.WithRotationTime(time.Minute),
+		rotatelogs.WithRotationTime(time.Duration(days*24)*time.Hour),
 	)
 	if nil != err {
 		log.SetOutput(os.Stderr)
 		log.Printf("Failed to create rotatelogs [%s]: %v\n", logNameLink, err)
-		return nil, err
+		logWriter = os.Stderr // 如果文件初始化失败，则使用stderr输出
 	}
+
 	logger := logrus.New()
-	// TODO: 修改机制，如果文件初始化失败，使用标准输出。而不是返回错误。
-	logger.SetOutput(writer)
-	return logger, nil
+	if config.GetGlobalConfig().Debug {
+		logger.SetLevel(logrus.DebugLevel)
+	} else {
+		logger.SetLevel(logrus.InfoLevel)
+	}
+	logger.SetOutput(logWriter)
+	logger.Out = logWriter
+	return logger
 }
 
-func GetOutputLogger() (*logrus.Logger, error) {
+func GetOutputLogger() *logrus.Logger {
 	if nil == outputLogger {
-		var err error
-		outputLogger, err = initLogger("output", 7)
-		if nil != err {
-			return nil, err
-		}
+		outputLogger = initLogger("output", 7)
 	}
-	return outputLogger, nil
+	return outputLogger
 }
 
-func GetAccessLogger() (*logrus.Logger, error) {
+func GetAccessLogger() *logrus.Logger {
 	if nil == accessLogger {
-		var err error
-		accessLogger, err = initLogger("access", 7)
-		if nil != err {
-			return nil, err
-		}
+		accessLogger = initLogger("access", 7)
 	}
-	return accessLogger, nil
+	return accessLogger
 }
 
-func GetSecureLogger() (*logrus.Logger, error) {
+func GetSecureLogger() *logrus.Logger {
 	if nil == secureLogger {
-		var err error
-		secureLogger, err = initLogger("secure", 30)
-		if nil != err {
-			return nil, err
-		}
+		secureLogger = initLogger("secure", 30)
 	}
-	return secureLogger, nil
+	return secureLogger
 }
 
 //
