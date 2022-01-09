@@ -24,7 +24,11 @@ var defaultConfig = Config{
 			"<password>",
 			"vivy",
 			"?parseTime=true&charset=utf8&loc=Local",
+			"mysql",
+			true,
+			false,
 			50,
+			200,
 		},
 		MongoDBConfig{
 			"127.0.0.1",
@@ -54,13 +58,17 @@ var defaultConfig = Config{
 var globalConfig *Config = nil
 
 type MysqlConfig struct {
-	Host               string `yaml:"host"`
-	Port               uint16 `yaml:"port"`
-	Username           string `yaml:"username"`
-	Password           string `yaml:"password"`
-	Database           string `yaml:"database"`
-	Options            string `yaml:"options"`
-	MaxIdleConnections int    `yaml:"max_idle_connections"`
+	Host         string `yaml:"host"`
+	Port         uint16 `yaml:"port"`
+	Username     string `yaml:"username"`
+	Password     string `yaml:"password"`
+	Database     string `yaml:"database"`
+	Options      string `yaml:"options"`
+	DriverName   string `yaml:"driver_name"`
+	ShowSQL      bool   `yaml:"show_sql"`
+	ShowExecTime bool   `yaml:"show_exec_time"`
+	MaxIdle      int    `yaml:"max_idle"`
+	MaxOpen      int    `yaml:"max_open"`
 }
 
 type MongoDBConfig struct {

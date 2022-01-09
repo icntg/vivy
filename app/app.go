@@ -6,7 +6,6 @@ import (
 	"app/utility/logger"
 	utilityPath "app/utility/path"
 	"flag"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -23,7 +22,7 @@ func main() {
 		os.Exit(errno.ErrorInitParam)
 		return
 	}
-	gConfig := config.GetGlobalConfig()
+	gConfig := config.GetGlobalConfigEx()
 
 	// 初始化日志模块
 	err = initLogger()
@@ -41,13 +40,8 @@ func main() {
 	engine := gin.New()
 	engine.Use(logger.Middleware()).Use(gin.Recovery())
 	addRoute(engine)
-	//engine.Use(middleware.LoggerMiddleware())
 
-	serviceHostPort := fmt.Sprintf(
-		"%s:%d",
-		gConfig.Service.HTTP.Host,
-		gConfig.Service.HTTP.Port)
-	err = engine.Run(serviceHostPort)
+	err = engine.Run(gConfig.ServiceHostPort)
 	if nil != err {
 		os.Exit(errno.ErrorStartGinService)
 		return
@@ -121,11 +115,4 @@ func initLogger() error {
 	_ = logger.GetAccessLogger()
 	_ = logger.GetSecureLogger()
 	return nil
-}
-
-/*
-从MySQL中读取权限配置到Redis
-*/
-func refreshRBAC() {
-
 }

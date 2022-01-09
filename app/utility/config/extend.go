@@ -1,19 +1,38 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
-type ExConfig struct {
+type Extend struct {
 	Config
-	MysqlDSN string
+	ServiceHostPort string
+	MysqlDSN        string
 }
 
-func (ths *ExConfig) From(cfg *Config) {
+var globalConfigExtend *Extend = nil
+
+func (ths *Extend) from(cfg *Config) *Extend {
+	ths.Config = *cfg
+	ths.ServiceHostPort = fmt.Sprintf(
+		"%s:%d",
+		cfg.Service.HTTP.Host,
+		cfg.Service.HTTP.Port)
 	ths.MysqlDSN = fmt.Sprintf("%s:%s@%s:%d/%s%s",
-		cfg.DataSource.Mysql.Username,
-		cfg.DataSource.Mysql.Password,
+		url.QueryEscape(cfg.DataSource.Mysql.Username),
+		url.QueryEscape(cfg.DataSource.Mysql.Password),
 		cfg.DataSource.Mysql.Host,
 		cfg.DataSource.Mysql.Port,
 		cfg.DataSource.Mysql.Database,
 		cfg.DataSource.Mysql.Options,
 	)
+	return ths
+}
+
+func GetGlobalConfigEx() *Extend {
+	if nil == globalConfigExtend {
+		globalConfigExtend.from(GetGlobalConfig())
+	}
+	return globalConfigExtend
 }

@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -29,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func StrJoin(args ...string) string {
@@ -50,12 +50,12 @@ func substr(s string, pos, length int) string {
 	return string(runes[pos:l])
 }
 
-//获取上一级目录
-func GetParentDirectory(dirctory string) string {
-	return substr(dirctory, 0, strings.LastIndex(dirctory, "/"))
+// GetParentDirectory 获取上一级目录
+func GetParentDirectory(directory string) string {
+	return substr(directory, 0, strings.LastIndex(directory, "/"))
 }
 
-//获取当前目录
+// GetCurrentDirectory 获取当前目录
 func GetCurrentDirectory() string {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -71,7 +71,7 @@ func GetAbsDir() string {
 	return dir
 }
 
-//首字母大写 _后的字母大写
+// StrFirstToUpper 首字母大写 _后的字母大写
 func StrFirstToUpper(str string) string {
 	temp := strings.Split(str, "_")
 	var upperStr string
@@ -91,7 +91,7 @@ func StrFirstToUpper(str string) string {
 	return temp[0] + upperStr
 }
 
-//查找某值是否在数组中
+// InArrayString 查找某值是否在数组中
 func InArrayString(v string, m *[]string) bool {
 	for _, value := range *m {
 		if value == v {
@@ -100,6 +100,7 @@ func InArrayString(v string, m *[]string) bool {
 	}
 	return false
 }
+
 func WriteFile(path string, content string) (string, bool) {
 	s := `^data:\s*image\/(\w+);base64,`
 	b, _ := regexp.MatchString(s, content)
@@ -123,6 +124,7 @@ func WriteFile(path string, content string) (string, bool) {
 	}
 	return relative, true
 }
+
 func Base64Content(url, path, content string) string {
 	reg := regexp.MustCompile(`data:\s*image\/(\w+);base64,[\w\d+/=]*[=|==]`)
 	imageArr := reg.FindAllString(content, -1)
@@ -136,6 +138,7 @@ func Base64Content(url, path, content string) string {
 	}
 	return content
 }
+
 func Contain(obj interface{}, target interface{}) (bool, error) {
 	targetValue := reflect.ValueOf(target)
 	switch reflect.TypeOf(target).Kind() {
@@ -153,82 +156,82 @@ func Contain(obj interface{}, target interface{}) (bool, error) {
 	return false, errors.New("not in array")
 }
 
-//获取随机数 纯文字
+// GetRandomString 获取随机数 纯文字
 func GetRandomString(n int) string {
 	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
+	byteStr := []byte(str)
 	result := []byte{}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < n; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
+		result = append(result, byteStr[r.Intn(len(byteStr))])
 	}
 	return string(result)
 }
 
-//获取随机数  数字和文字
+// GetRandomBoth 获取随机数  数字和文字
 func GetRandomBoth(n int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
+	byteStr := []byte(str)
 	result := []byte{}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < n; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
+		result = append(result, byteStr[r.Intn(len(byteStr))])
 	}
 	return string(result)
 }
 
-//获取随机数  纯数字
+// GetRandomNum 获取随机数  纯数字
 func GetRandomNum(n int) string {
 	str := "0123456789"
-	bytes := []byte(str)
+	byteStr := []byte(str)
 	result := []byte{}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < n; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
+		result = append(result, byteStr[r.Intn(len(byteStr))])
 	}
 	return string(result)
 }
 
-//获取随机数  base32
+// GetRandomBase32 获取随机数  base32
 func GetRandomBase32(n int) string {
 	str := "234567abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
+	byteStr := []byte(str)
 	result := []byte{}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < n; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
+		result = append(result, byteStr[r.Intn(len(byteStr))])
 	}
 	return string(result)
 }
 
-//生成区间随机数
+// RandInt 生成区间随机数
 func RandInt(min, max int) int {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return r.Intn(max-min) + min
 }
 
-//sha1加密
+// Sha1En sha1加密
 func Sha1En(data string) string {
 	t := sha1.New()
-	io.WriteString(t, data)
+	t.Write([]byte(data))
 	return fmt.Sprintf("%x", t.Sum(nil))
 }
 
-//对字符串进行MD5哈希
+// Md5En 对字符串进行MD5哈希
 func Md5En(data string) string {
 	t := md5.New()
-	io.WriteString(t, data)
+	t.Write([]byte(data))
 	return fmt.Sprintf("%x", t.Sum(nil))
 }
 
-//生成32位md5字串
+// GetMd5String 生成32位md5字串
 func GetMd5String(s string) string {
 	h := md5.New()
 	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-//自定义唯一id
+// GetUniqueId 自定义唯一id
 func GetUniqueId() string {
 	cur := time.Now()
 	timestamps := cur.UnixNano()
@@ -236,14 +239,14 @@ func GetUniqueId() string {
 	return Md5En(uid)
 }
 
-//自定义唯一id
+// OrderUniqueId 自定义唯一id
 func OrderUniqueId() string {
 	cur := time.Now()
 	timestamps := cur.UnixNano() / 1000000 //获取毫秒
 	return strconv.FormatInt(timestamps, 10) + GetRandomNum(5)
 }
 
-//获取程序运行路径
+// GetRunDirectory 获取程序运行路径
 func GetRunDirectory() (string, error) {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -252,7 +255,7 @@ func GetRunDirectory() (string, error) {
 	return strings.Replace(dir, "\\", "/", -1), nil
 }
 
-//验证手机
+// MobileVerify 验证手机
 func MobileVerify(data map[string]interface{}) bool {
 	if data["country"] == "86" {
 		reg := `^1\d{10}$`
@@ -270,7 +273,7 @@ func MobileVerify(data map[string]interface{}) bool {
 	return true
 }
 
-//验证邮箱
+// MailVerify 验证邮箱
 func MailVerify(email string) bool {
 	reg := `^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+`
 	rgx := regexp.MustCompile(reg)
@@ -280,7 +283,7 @@ func MailVerify(email string) bool {
 	return true
 }
 
-// 判断所给路径是否为文件夹
+// IsDir 判断所给路径是否为文件夹
 func IsDir(path string) bool {
 	s, err := os.Stat(path)
 	if err != nil {
@@ -289,7 +292,7 @@ func IsDir(path string) bool {
 	return s.IsDir()
 }
 
-// 判断所给路径文件/文件夹是否存在
+// FileExists 判断所给路径文件/文件夹是否存在
 func FileExists(path string) bool {
 	_, err := os.Stat(path) //os.Stat获取文件信息
 	if err != nil {
@@ -301,7 +304,7 @@ func FileExists(path string) bool {
 	return true
 }
 
-//替换名字为星号
+// ReplaceName 替换名字为星号
 func ReplaceName(str string) string {
 	if str == "" {
 		return ""
@@ -309,42 +312,50 @@ func ReplaceName(str string) string {
 	return string([]rune(str)[:1]) + "**"
 }
 
-//浮点数位数
+func CoverWithStars(str string) string {
+	sb := strings.Builder{}
+	for i := 0; i < utf8.RuneCountInString(str); i++ {
+		sb.WriteString("*")
+	}
+	return sb.String()
+}
+
+// DecimalValue 浮点数位数
 func DecimalValue(value float64, num string) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%."+num+"f", value), 64)
 	return value
 }
 
-//获取地区
+// GetCityByIp 获取地区
 func GetCityByIp(ip string) string {
 	return ""
 }
 
-//时间戳转字符
+// GetDate 时间戳转字符
 func GetDate(timestamp int64) string {
 	tm := time.Unix(timestamp, 0)
 	return tm.Format("2006-01-02")
 }
 
-//时间戳转字符 带具体时间
-func GetDatetime(timestamp int64) string {
+// GetDateTime 时间戳转字符 带具体时间
+func GetDateTime(timestamp int64) string {
 	tm := time.Unix(timestamp, 0)
 	return tm.Format("2006-01-02 15:04:05")
 }
 
-//字符转时间戳
+// StrToTime 字符转时间戳
 func StrToTime(dates string) int64 {
 	tm2, _ := time.Parse("2006-01-02", dates)
 	return tm2.Unix()
 }
 
-//字符转时间戳   带详细时间
-func StrToDateime(dates string) int64 {
+// StrToDateTime 字符转时间戳   带详细时间
+func StrToDateTime(dates string) int64 {
 	tm2, _ := time.Parse("2006-01-02 15:04:05", dates)
 	return tm2.Unix()
 }
 
-//字符转时间格式   2020-04-19T16:00:00.000Z
+// StrToTimes 字符转时间格式   2020-04-19T16:00:00.000Z
 func StrToTimes(dates string) time.Time {
 	//layout := "2006-01-02T15:04:05.000Z"
 	//t, err := time.Parse(layout, str)
@@ -352,7 +363,7 @@ func StrToTimes(dates string) time.Time {
 	return t
 }
 
-//目录是否存在
+// PathExists 目录是否存在
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -364,22 +375,22 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-//f:需要处理的浮点数，n：要保留小数的位数
+// Round f:需要处理的浮点数，n：要保留小数的位数
 //Pow10（）返回10的n次方，最后一位四舍五入，对ｎ＋１位加０．５后四舍五入
 func Round(f float64, n int) float64 {
 	n10 := math.Pow10(n)
 	return math.Trunc((f+0.5/n10)*n10) / n10
 }
 
-//获取本地ip
+// GetLocalIp 获取本地ip
 func GetLocalIp() (IpAddr string) {
 	IpAddr = "127.0.0.1"
-	addrs, err := net.InterfaceAddrs()
+	addresses, err := net.InterfaceAddrs()
 	if err != nil {
 		panic("Get local IP addr failed!!!")
 		return
 	}
-	for _, address := range addrs {
+	for _, address := range addresses {
 		// 检查ip地址判断是否回环地址
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
@@ -389,6 +400,7 @@ func GetLocalIp() (IpAddr string) {
 	}
 	return
 }
+
 func CheckErr(err error) {
 	if err != nil {
 		//panic(err)
@@ -397,6 +409,7 @@ func CheckErr(err error) {
 		os.Exit(0)
 	}
 }
+
 func ParseFile(path string) map[string]interface{} {
 	content, err := ioutil.ReadFile(path)
 	CheckErr(err)
@@ -406,7 +419,7 @@ func ParseFile(path string) map[string]interface{} {
 	return data
 }
 
-//是否是文件
+// IsFile 是否是文件
 func IsFile(f string) bool {
 	fi, e := os.Stat(f)
 	if e != nil {
@@ -418,13 +431,14 @@ func IsFile(f string) bool {
 func TypeOfV(v interface{}) string {
 	return reflect.TypeOf(v).String()
 }
+
 func ShowMsg(v interface{}) {
 	fmt.Printf("Operation error: %s \n", v)
 	os.Exit(0)
 	//panic(v)
 }
 
-//加载包
+// LoadPackage 加载包
 func LoadPackage(p string) error {
 	var c *exec.Cmd
 	if runtime.GOOS != "linux" {
@@ -438,11 +452,12 @@ func LoadPackage(p string) error {
 	return nil
 }
 
-//截取指定字符子串
+// SubstrContains 截取指定字符子串
 func SubstrContains(s, substr string) string {
 	n := strings.Index(s, substr)
 	return s[n:]
 }
+
 func Substr(s, substr string) string {
 	n := strings.Index(s, substr)
 	return s[n+len(substr):]
