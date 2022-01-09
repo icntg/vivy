@@ -25,11 +25,7 @@ func main() {
 	gConfig := config.GetGlobalConfigEx()
 
 	// 初始化日志模块
-	err = initLogger()
-	if nil != err {
-		os.Exit(errno.ErrorInitLogger)
-		return
-	}
+	_ = initLogger()
 
 	if gConfig.Debug {
 		gin.SetMode(gin.DebugMode)
@@ -40,6 +36,10 @@ func main() {
 	engine := gin.New()
 	engine.Use(logger.Middleware()).Use(gin.Recovery())
 	addRoute(engine)
+
+	log.SetOutput(os.Stdout)
+	log.Printf("gin-server is going to start on [%s] ...\n", gConfig.ServiceHostPort)
+	_ = os.Stdout.Sync()
 
 	err = engine.Run(gConfig.ServiceHostPort)
 	if nil != err {
@@ -86,7 +86,7 @@ func initParam() error {
 			log.SetOutput(os.Stderr)
 			log.Printf("Write config template [%s] failed: %v\n", *flagParamTemplate, err)
 		}
-		return err
+		os.Exit(0)
 	}
 
 	// 读取配置文件。

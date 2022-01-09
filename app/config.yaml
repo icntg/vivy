@@ -6,24 +6,25 @@ data_source:
     password: "root"
     database: "vivy"
     options: "?parseTime=true&charset=utf8&loc=Local"
-    max_idle_conns: 50
+    driver_name: "mysql"
+    show_sql: true
+    show_exec_time: false
+    max_idle: 50
+    max_open: 200
   mongodb:
     host: "127.0.0.1"
     port: 27017
     username: "root"
-    password: "123456"
+    password: "root"
   redis:
     host: "127.0.0.1"
     port: 6379
     username: "root"
-    password: "123456"
-
+    password: "root"
 service:
   http:
     host: "0.0.0.0"
     port: 8088
-
 logger:
   path: "./logs"
-
 debug: true

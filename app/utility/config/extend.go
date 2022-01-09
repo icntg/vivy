@@ -6,7 +6,7 @@ import (
 )
 
 type Extend struct {
-	Config
+	*Config
 	ServiceHostPort string
 	MysqlDSN        string
 }
@@ -14,7 +14,7 @@ type Extend struct {
 var globalConfigExtend *Extend = nil
 
 func (ths *Extend) from(cfg *Config) *Extend {
-	ths.Config = *cfg
+	ths.Config = cfg
 	ths.ServiceHostPort = fmt.Sprintf(
 		"%s:%d",
 		cfg.Service.HTTP.Host,
@@ -32,6 +32,7 @@ func (ths *Extend) from(cfg *Config) *Extend {
 
 func GetGlobalConfigEx() *Extend {
 	if nil == globalConfigExtend {
+		globalConfigExtend = &Extend{}
 		globalConfigExtend.from(GetGlobalConfig())
 	}
 	return globalConfigExtend
