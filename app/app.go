@@ -15,6 +15,7 @@ import (
 
 /* 启动入口函数 */
 func main() {
+	//defer
 	var err error
 	// 命令行参数处理、加载配置文件
 	err = initParam()
@@ -32,6 +33,7 @@ func main() {
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	gin.ForceConsoleColor()
 	//engine := gin.Default()
 	engine := gin.New()
 	engine.Use(logger.Middleware()).Use(gin.Recovery())
