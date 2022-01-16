@@ -18,7 +18,8 @@ log.txt
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-app/.gopath
+/app/.gopath/
+/app/app
 go.sum
 
 ###### web ######

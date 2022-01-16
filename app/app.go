@@ -1,12 +1,13 @@
 package main
 
 import (
+	"app/core/initialize"
 	"app/utility/config"
 	"app/utility/errno"
 	"app/utility/logger"
 	utilityPath "app/utility/path"
-	"flag"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/dig"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,15 @@ import (
 
 /* 启动入口函数 */
 func main() {
+	container := dig.New()
+	// init args 参数
+	container.Provide(initialize.InitArgs)
+	// init config (load / write a template) 读取配置。或生成配置模板。
+	container.Provide()
+	// init logger 根据配置生成logger
+
+	// run app server forever 开始运行后台服务。
+
 	//defer
 	var err error
 	// 命令行参数处理、加载配置文件
@@ -65,51 +75,6 @@ func addRoute(router *gin.Engine) {
 		}
 
 	}
-}
-
-/* 命令行参数处理 */
-func initParam() error {
-	// 配置文件路径
-	var flagParamConfig = flag.String("c", "config.yaml", "Using a custom config file")
-	// 输出模板
-	var flagParamTemplate = flag.String("o", "", "Output a config file template")
-	flag.Parse()
-
-	// 输出模板
-	n := len(*flagParamTemplate)
-	if n > 0 {
-		log.SetOutput(os.Stdout)
-		log.Printf("Start to write config template [%s]\n", *flagParamTemplate)
-		err := config.GenerateTemplate(*flagParamTemplate)
-		if err == nil {
-			log.SetOutput(os.Stdout)
-			log.Printf("Write config template [%s] successfully!\n", *flagParamTemplate)
-		} else {
-			log.SetOutput(os.Stderr)
-			log.Printf("Write config template [%s] failed: %v\n", *flagParamTemplate, err)
-		}
-		os.Exit(0)
-	}
-
-	// 读取配置文件。
-	_, err := os.Stat(*flagParamConfig)
-	if nil != err && os.IsNotExist(err) {
-		// 文件不存在
-		log.SetOutput(os.Stderr)
-		log.Printf("config file [%s] doesnot not exist!\n", *flagParamConfig)
-		return err
-	}
-	// 配置文件存在。尝试进行解析。
-	conf, err := config.Read(*flagParamConfig)
-	if err == nil {
-		log.SetOutput(os.Stdout)
-		log.Printf("Load config file [%s] successfully:\n%v\n", *flagParamConfig, conf)
-		config.SetGlobalConfig(conf)
-	} else {
-		log.SetOutput(os.Stderr)
-		log.Printf("Load config file [%s] failed: %v\n", *flagParamConfig, err)
-	}
-	return err
 }
 
 func initLogger() error {
