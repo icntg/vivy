@@ -21,6 +21,8 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
+	github.com/lestrrat-go/strftime v1.0.5 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
@@ -46,11 +48,22 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
+/// 配置文件
 // github.com/spf13/viper
+
+/// HTTP服务
 // github.com/fvbock/endless
 // github.com/gin-gonic/gin
 // github.com/gin-contrib/sessions/redis
+
+/// 日志
 // go.uber.org/zap  ===>  github.com/uber-go/zap
+// go.uber.org/zap/zapcore
+// github.com/lestrrat-go/file-rotatelogs
+
+/// 高级错误信息
 // github.com/pkg/errors
+
+/// 依赖注入
 // github.com/google/wire
 //

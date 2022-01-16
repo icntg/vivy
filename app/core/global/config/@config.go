@@ -4,13 +4,22 @@ import (
 	"bytes"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
+	"log"
+	"os"
+	"sync"
+)
+
+var (
+	once     sync.Once
+	instance *Config = nil
 )
 
 type Config struct {
+	Dev Dev `mapstructure:"dev" json:"dev" yaml:"dev"`
 	Zap Zap `mapstructure:"zap" json:"zap" yaml:"zap"`
 
 	Casbin  Casbin  `mapstructure:"casbin" json:"casbin" yaml:"casbin"`
-	System  System  `mapstructure:"system" json:"system" yaml:"system"`
+	Service Service `mapstructure:"service" json:"service" yaml:"service"`
 	Captcha Captcha `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
 	// auto
 	// database
@@ -21,43 +30,55 @@ type Config struct {
 	Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 }
 
-func (ths *Config) ReadFromYamlFile(filename string) error {
+func GetInstance() *Config {
+	once.Do(func() {
+		instance = new(Tool)
+	})
+	return instance
+}
+
+func (ths *Config) ReadFromYamlFile(filename string) {
 	v := viper.New()
 	v.SetConfigFile(filename)
 	v.SetConfigType("yaml")
 	err := v.ReadInConfig()
 	if nil != err {
-		return err
+		log.SetOutput(os.Stderr)
+		log.Fatalf("viper cannot read config [%s]: %v\n", filename, err)
 	}
 	err = v.Unmarshal(ths)
 	if nil != err {
-		return err
+		log.SetOutput(os.Stderr)
+		log.Fatalf("viper cannot unmarshal data [%v]: %v\n", v, err)
 	}
-
-	return nil
 }
 
-func SaveToYamlFile(filename string) error {
+func SaveToYamlFile(filename string) {
 	bs, err := yaml.Marshal(defaultConfig())
 	if nil != err {
-		return err
+		log.SetOutput(os.Stderr)
+		log.Fatalf("yaml cannot marshal DefaultConfig: %v\n", err)
 	}
 	v := viper.New()
 	v.SetConfigFile(filename)
 	v.SetConfigType("yaml")
 	err = v.ReadConfig(bytes.NewBuffer(bs))
 	if nil != err {
-		return err
+		log.SetOutput(os.Stderr)
+		log.Fatalf("viper cannot read in data [%v]: %v\n", string(bs), err)
 	}
 	err = v.SafeWriteConfig()
 	if nil != err {
-		return err
+		log.SetOutput(os.Stderr)
+		log.Fatalf("viper cannot write config [%v]: %v\n", filename, err)
 	}
-	return nil
 }
 
 func defaultConfig() Config {
 	return Config{
+		Dev{
+			Debug: false,
+		},
 		Zap{
 			"info",
 			"--TODO--",
@@ -71,14 +92,9 @@ func defaultConfig() Config {
 		Casbin{
 			"--TODO--",
 		},
-		System{
-			"--TODO--",
+		Service{
+			"127.0.0.1",
 			9088,
-			"mysql",
-			"--TODO--",
-			true,
-			0,
-			0,
 		},
 		Captcha{
 			5,

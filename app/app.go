@@ -1,7 +1,6 @@
 package main
 
 import (
-	"app/core/initialize"
 	"app/utility/config"
 	"app/utility/errno"
 	"app/utility/logger"
@@ -18,7 +17,7 @@ import (
 func main() {
 	container := dig.New()
 	// init args 参数
-	container.Provide(initialize.InitArgs)
+	container.Provide(global.InitArgs)
 	// init config (load / write a template) 读取配置。或生成配置模板。
 	container.Provide()
 	// init logger 根据配置生成logger
