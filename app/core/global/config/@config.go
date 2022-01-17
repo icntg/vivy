@@ -6,12 +6,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"log"
 	"os"
-	"sync"
-)
-
-var (
-	once     sync.Once
-	instance *Config = nil
 )
 
 type Config struct {
@@ -30,14 +24,7 @@ type Config struct {
 	Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 }
 
-func GetInstance() *Config {
-	once.Do(func() {
-		instance = new(Tool)
-	})
-	return instance
-}
-
-func (ths *Config) ReadFromYamlFile(filename string) {
+func ReadFromYamlFile(filename string) Config {
 	v := viper.New()
 	v.SetConfigFile(filename)
 	v.SetConfigType("yaml")
@@ -46,11 +33,13 @@ func (ths *Config) ReadFromYamlFile(filename string) {
 		log.SetOutput(os.Stderr)
 		log.Fatalf("viper cannot read config [%s]: %v\n", filename, err)
 	}
-	err = v.Unmarshal(ths)
+	ret := defaultConfig()
+	err = v.Unmarshal(&ret)
 	if nil != err {
 		log.SetOutput(os.Stderr)
 		log.Fatalf("viper cannot unmarshal data [%v]: %v\n", v, err)
 	}
+	return ret
 }
 
 func SaveToYamlFile(filename string) {

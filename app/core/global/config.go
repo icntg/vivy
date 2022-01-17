@@ -17,14 +17,16 @@ func ConfigInstance() *config.Config {
 		systemArgs := SystemArgsInstance()
 		if nil != systemArgs {
 			log.SetOutput(os.Stderr)
-			log.Fatalf("TODO:")
+			log.Fatalln("require system args.")
 		}
 		if systemArgs.ConfigTemplate != nil && len(*systemArgs.ConfigTemplate) > 0 {
 			// 输出配置模板
+			config.SaveToYamlFile(*systemArgs.ConfigTemplate)
 		} else {
 			// 读取配置文件
+			cfg := config.ReadFromYamlFile(*systemArgs.ConfigFilename)
+			configInstance = &cfg
 		}
-
 	})
 	return configInstance
 }
