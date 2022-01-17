@@ -1,4 +1,4 @@
-package path
+package common
 
 import (
 	"os"
