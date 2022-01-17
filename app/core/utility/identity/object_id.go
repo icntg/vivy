@@ -1,7 +1,6 @@
 package identity
 
 import (
-	"app/utility/base32"
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
@@ -127,11 +126,6 @@ func ObjectId() [12]byte {
 		macValue[0], macValue[1], macValue[2],
 		pid[0], pid[1],
 		c[0], c[1], c[2]}
-}
-
-func ObjectIdB32x() string {
-	oid := ObjectId()
-	return base32.EncodeId(oid[:])
 }
 
 func ObjectIdB64() string {

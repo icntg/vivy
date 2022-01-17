@@ -1,12 +1,13 @@
 package token
 
 import (
-	logger2 "app/utility/logger"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base32"
+	"log"
 	unsafeRand "math/rand"
+	"os"
 	"strings"
 	"time"
 )
@@ -59,12 +60,13 @@ func Verify(b32secret string, input6Digits uint32) bool {
 		secret  []byte
 		noError = true
 	)
-	logger := logger2.GetOutputLogger()
 	b32secretNoSpace := strings.ReplaceAll(b32secret, " ", "")
 	b32secretNoSpaceUpper := strings.ToUpper(b32secretNoSpace)
 	secret, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(b32secretNoSpaceUpper)
 	if nil != err {
-		logger.Warnf("Cannot decode base32 of google token secret.")
+		log.SetOutput(os.Stderr)
+		log.Println("GoogleToken: Cannot decode base32 of google token secret.")
+		// use random secret to ensure time is almost same.
 		secret = make([]byte, 20)
 		_, err = rand.Read(secret)
 		if nil != err {
