@@ -84,6 +84,8 @@ func defaultConfig() Config {
 		Service{
 			"127.0.0.1",
 			9088,
+			"./web",
+			true,
 		},
 		Captcha{
 			5,

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	nonceSize int = -1
+	nonceSize = -1
 )
 
 func getNonceSize() (int, error) {
@@ -29,27 +29,42 @@ func getNonceSize() (int, error) {
 	return nonceSize, nil
 }
 
-func Encrypt(sharedKey []byte, iv []byte, message []byte) ([]byte, error) {
-	var (
-		nonce []byte = nil
-	)
-	if nil == sharedKey {
+type DataAES256GCM crypto.DataCrypto
+
+func (d DataAES256GCM) MakeKeys() ([]byte, []byte, error) {
+	if nil == d.SharedKey {
+		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: sharedKey is nil")
+	}
+	if nil == d.Nonce {
+		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: IV is nil")
+	}
+	he := hmac.New(sha256.New, d.Nonce)
+	he.Write(d.SharedKey)
+	encKey := he.Sum(nil)
+	hm := hmac.New(sha256.New, d.SharedKey)
+	hm.Write(d.Nonce)
+	macKey := hm.Sum(nil)
+	return encKey, macKey, nil
+}
+
+func (d DataAES256GCM) Encrypt() ([]byte, error) {
+	if nil == d.SharedKey {
 		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: sharedKey is nil")
 	}
-	if nil == message {
-		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: message is nil")
+	if nil == d.Data {
+		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: data is nil")
 	}
 	nonceSize, err := getNonceSize()
 	if nil != err {
 		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: nonce size")
 	}
-	if nil == iv || len(iv) < nonceSize {
-		nonce = crypto.Rand(nonceSize, true)
+	if nil == d.Nonce || len(d.Nonce) < nonceSize {
+		d.Nonce = crypto.Rand(nonceSize, true)
 	} else {
-		nonce = iv[:nonceSize]
+		d.Nonce = d.Nonce[:nonceSize]
 	}
 
-	encKey, macKey, err := MakeKeys(sharedKey, nonce)
+	encKey, macKey, err := d.MakeKeys()
 	if nil != err {
 		return nil, err
 	}
@@ -61,27 +76,27 @@ func Encrypt(sharedKey []byte, iv []byte, message []byte) ([]byte, error) {
 	if nil != err {
 		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: cipher.NewGCM")
 	}
-	encWithTag := aesGCM.Seal(nil, nonce, message, macKey)
+	encWithTag := aesGCM.Seal(nil, d.Nonce, d.Data, macKey)
 	encrypted := make([]byte, nonceSize+len(encWithTag))
-	copy(encrypted, nonce)
+	copy(encrypted, d.Nonce)
 	copy(encrypted[nonceSize:], encWithTag)
 	return encrypted, nil
 }
 
-func Decrypt(sharedKey, encrypted []byte) ([]byte, error) {
-	if nil == sharedKey {
+func (d DataAES256GCM) Decrypt() ([]byte, error) {
+	if nil == d.SharedKey {
 		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: sharedKey is nil")
 	}
-	if nil == encrypted {
-		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: encrypted is nil")
+	if nil == d.Data {
+		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: data is nil")
 	}
 	nonceSize, err := getNonceSize()
 	if nil != err {
 		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: nonce size")
 	}
-	nonce := encrypted[:nonceSize]
-	encWithTag := encrypted[nonceSize:]
-	encKey, macKey, err := MakeKeys(sharedKey, nonce)
+	d.Nonce = d.Data[:nonceSize]
+	encWithTag := d.Data[nonceSize:]
+	encKey, macKey, err := d.MakeKeys()
 	if nil != err {
 		return nil, err
 	}
@@ -93,25 +108,9 @@ func Decrypt(sharedKey, encrypted []byte) ([]byte, error) {
 	if nil != err {
 		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: cipher.NewGCM")
 	}
-	message, err := aesGCM.Open(nil, nonce, encWithTag, macKey)
+	message, err := aesGCM.Open(nil, d.Nonce, encWithTag, macKey)
 	if nil != err {
 		return nil, err
 	}
 	return message, nil
-}
-
-func MakeKeys(sharedKey, iv []byte) ([]byte, []byte, error) {
-	if nil == sharedKey {
-		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: sharedKey is nil")
-	}
-	if nil == iv {
-		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: IV is nil")
-	}
-	he := hmac.New(sha256.New, iv)
-	he.Write(sharedKey)
-	encKey := he.Sum(nil)
-	hm := hmac.New(sha256.New, sharedKey)
-	hm.Write(iv)
-	macKey := hm.Sum(nil)
-	return encKey, macKey, nil
 }

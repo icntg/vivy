@@ -9,23 +9,48 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Encrypt(sharedKey []byte, iv []byte, message []byte) ([]byte, error) {
-	var (
-		iv8 [8]byte
-	)
-	if nil == sharedKey {
+const (
+	MACLen = 16
+	IVLen  = 8
+)
+
+// [MAC][IV][Encrypted]
+// encKey = hmac_md5(iv, key)
+// macKey = hmac_md5(key, iv)
+// Encrypted = rc4(encKey, message)
+// MAC = hmac_md5(macKey, iv + message)
+
+type DataRC4MD5 crypto.DataCrypto
+
+func (d DataRC4MD5) MakeKeys() ([]byte, []byte, error) {
+	if nil == d.SharedKey {
+		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: sharedKey is nil")
+	}
+	if nil == d.Nonce || len(d.Nonce) != IVLen {
+		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: IV is incorrect")
+	}
+	he := hmac.New(md5.New, d.Nonce)
+	he.Write(d.SharedKey)
+	encKey := he.Sum(nil)
+	hm := hmac.New(md5.New, d.SharedKey)
+	hm.Write(d.Nonce)
+	macKey := hm.Sum(nil)
+	return encKey, macKey, nil
+}
+
+func (d DataRC4MD5) Encrypt() ([]byte, error) {
+	if nil == d.SharedKey {
 		return nil, errors.Errorf("crypto.rc4md5.Encrypt: sharedKey is nil")
 	}
-	if nil == message {
-		return nil, errors.Errorf("crypto.rc4md5.Encrypt: message is nil")
+	if nil == d.Data {
+		return nil, errors.Errorf("crypto.rc4md5.Encrypt: data is nil")
 	}
-	if nil == iv || len(iv) < crypto.IVLen {
-		tmpIV := crypto.Rand(crypto.IVLen, true)
-		copy(iv8[:], tmpIV)
+	if nil == d.Nonce || len(d.Nonce) < IVLen {
+		d.Nonce = crypto.Rand(IVLen, true)
 	} else {
-		copy(iv8[:], iv)
+		d.Nonce = d.Nonce[:IVLen]
 	}
-	encKey, macKey, err := MakeKeys(sharedKey, iv)
+	encKey, macKey, err := d.MakeKeys()
 	if nil != err {
 		return nil, err
 	}
@@ -33,36 +58,36 @@ func Encrypt(sharedKey []byte, iv []byte, message []byte) ([]byte, error) {
 	if nil != err {
 		return nil, err
 	}
-	buffer := make([]byte, crypto.SumLen+crypto.IVLen+len(message))
-	copy(buffer[crypto.SumLen:], iv8[:])
-	cipher.XORKeyStream(buffer[crypto.SumLen+crypto.IVLen:], message)
+	buffer := make([]byte, MACLen+IVLen+len(d.Data))
+	copy(buffer[MACLen:], d.Nonce)
+	cipher.XORKeyStream(buffer[MACLen+IVLen:], d.Data)
 	h := hmac.New(md5.New, macKey)
-	h.Write(buffer[crypto.SumLen:])
+	h.Write(buffer[MACLen:])
 	mac := h.Sum(nil)
 	copy(buffer, mac)
 	return buffer, nil
 }
 
-func Decrypt(sharedKey, encrypted []byte) ([]byte, error) {
-	if nil == sharedKey {
+func (d DataRC4MD5) Decrypt() ([]byte, error) {
+	if nil == d.SharedKey {
 		return nil, errors.Errorf("crypto.rc4md5.Decrypt: sharedKey is nil")
 	}
-	if nil == encrypted {
+	if nil == d.Data {
 		return nil, errors.Errorf("crypto.rc4md5.Decrypt: encrypted is nil")
 	}
-	if len(encrypted) <= crypto.SumLen+crypto.IVLen+1 {
+	if len(d.Data) <= MACLen+IVLen+1 {
 		return nil, errors.Errorf("crypto.rc4md5.Decrypt: encrypted is too short")
 	}
-	expectMac := encrypted[0:crypto.SumLen]
-	iv := encrypted[crypto.SumLen : crypto.SumLen+crypto.IVLen]
-	encKey, macKey, err := MakeKeys(sharedKey, iv)
+	expectMac := d.Data[0:MACLen]
+	d.Nonce = d.Data[MACLen : MACLen+IVLen]
+	encKey, macKey, err := d.MakeKeys()
 	if nil != err {
 		return nil, err
 	}
 	h := hmac.New(md5.New, macKey)
-	h.Write(encrypted[crypto.SumLen:])
-	realMac := h.Sum(nil)
-	if !bytes.Equal(expectMac, realMac) {
+	h.Write(d.Data[MACLen:])
+	calcMac := h.Sum(nil)
+	if !bytes.Equal(expectMac, calcMac) {
 		return nil, errors.Errorf("crypto.rc4md5.Decrypt: MAC verify failed")
 	}
 
@@ -70,23 +95,7 @@ func Decrypt(sharedKey, encrypted []byte) ([]byte, error) {
 	if nil != err {
 		return nil, err
 	}
-	buffer := make([]byte, len(encrypted)-crypto.SumLen-crypto.IVLen)
-	cipher.XORKeyStream(buffer, encrypted[crypto.SumLen+crypto.IVLen:])
+	buffer := make([]byte, len(d.Data)-MACLen-IVLen)
+	cipher.XORKeyStream(buffer, d.Data[MACLen+IVLen:])
 	return buffer, nil
-}
-
-func MakeKeys(sharedKey, iv []byte) ([]byte, []byte, error) {
-	if nil == sharedKey {
-		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: sharedKey is nil")
-	}
-	if nil == iv || len(iv) != crypto.IVLen {
-		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: IV is incorrect")
-	}
-	he := hmac.New(md5.New, iv)
-	he.Write(sharedKey)
-	encKey := he.Sum(nil)
-	hm := hmac.New(md5.New, sharedKey)
-	hm.Write(iv)
-	macKey := hm.Sum(nil)
-	return encKey, macKey, nil
 }
