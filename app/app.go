@@ -1,12 +1,11 @@
 package main
 
 import (
-	"app/utility/config"
+	"app/core/global"
 	"app/utility/errno"
 	"app/utility/logger"
 	utilityPath "app/utility/path"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/dig"
 	"log"
 	"net/http"
 	"os"
@@ -15,29 +14,14 @@ import (
 
 /* 启动入口函数 */
 func main() {
-	container := dig.New()
-	// init args 参数
-	container.Provide(global.InitArgs)
-	// init config (load / write a template) 读取配置。或生成配置模板。
-	container.Provide()
-	// init logger 根据配置生成logger
+	// 命令行参数，获取配置文件等信息
+	_ = global.SystemArgsInstance()
+	// 加载配置文件
+	gConfig := global.ConfigInstance()
+	// 初始化日志
+	_ = global.LoggersInstance()
 
-	// run app server forever 开始运行后台服务。
-
-	//defer
-	var err error
-	// 命令行参数处理、加载配置文件
-	err = initParam()
-	if nil != err {
-		os.Exit(errno.ErrorInitParam)
-		return
-	}
-	gConfig := config.GetGlobalConfigEx()
-
-	// 初始化日志模块
-	_ = initLogger()
-
-	if gConfig.Debug {
+	if gConfig.Dev.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
