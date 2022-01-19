@@ -462,3 +462,17 @@ func Substr(s, substr string) string {
 	n := strings.Index(s, substr)
 	return s[n+len(substr):]
 }
+
+func OutPrintf(format string, a ...interface{}) {
+	_, _ = os.Stdout.WriteString(
+		fmt.Sprintf(format, a),
+	)
+	_ = os.Stdout.Sync()
+}
+
+func ErrPrintf(format string, a ...interface{}) {
+	_, _ = os.Stderr.WriteString(
+		fmt.Sprintf(format, a),
+	)
+	_ = os.Stderr.Sync()
+}

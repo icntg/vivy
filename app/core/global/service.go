@@ -2,19 +2,42 @@ package global
 
 import (
 	"app/core/middleware"
+	"app/core/utility/common"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"sync"
 )
+
+var (
+	serviceInstance *Service = nil
+	serviceOnce     sync.Once
+)
+
+func ServiceInstance() *Service {
+	serviceOnce.Do(func() {
+		gConfig := ConfigInstance()
+
+		if gConfig.Dev.Debug {
+			gin.SetMode(gin.DebugMode)
+		} else {
+			gin.SetMode(gin.ReleaseMode)
+		}
+		gin.ForceConsoleColor()
+
+		instance := Service{}
+		instance.GinEngine = gin.New()
+		instance.GinEngine.Use(middleware.GinRecovery(LoggersInstance().AccessLogger, true)).Use(middleware.GinLogger(LoggersInstance().AccessLogger))
+		serviceInstance = &instance
+	})
+	return serviceInstance
+}
 
 type Service struct {
 	GinEngine *gin.Engine
-}
-
-type WindowsService struct {
-	Service
-}
-
-type UnixService struct {
-	Service
 }
 
 type ServiceInterface interface {
@@ -22,32 +45,70 @@ type ServiceInterface interface {
 	AddRoutes(addRouteFunctions ...func(routes *gin.IRoutes))
 }
 
-func (ths Service) AddRoutes(addRouteFunctions ...func()) {
-	//TODO implement me
-	panic("implement me")
+func (ths Service) AddRoutes(addRouteFunctions ...func(engine *gin.Engine)) {
+	for _, f := range addRouteFunctions {
+		f(ths.GinEngine)
+	}
+}
+
+func AddStaticRoute(engine *gin.Engine) {
+	loggers := LoggersInstance()
+
+	engine.StaticFS("/", http.Dir("../web/dist"))
+	if gin.Mode() == gin.DebugMode {
+		engine.StaticFS("/", http.Dir("../web/dist"))
+	} else {
+		binaryPath, err := common.GetBinaryPath()
+		if nil != err {
+			loggers.OutPutLogger.Error("cannot GetBinaryPath")
+			engine.StaticFS("/", http.Dir("./static"))
+		} else {
+			engine.StaticFS("/", http.Dir(filepath.Join(binaryPath, "static")))
+		}
+
+	}
 }
 
 func (ths Service) Start() {
+	loggers := LoggersInstance()
 	gConfig := ConfigInstance()
-	if gConfig.Dev.Debug {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
+
+	startMsg := fmt.Sprintf("gin-server is going to start on [%s] ...",
+		gConfig.Service.GetServiceAddress())
+	loggers.OutPutLogger.Info(startMsg)
+	if !gConfig.Dev.Debug {
+		log.SetOutput(os.Stdout)
+		log.Println(startMsg)
+		_ = os.Stdout.Sync()
 	}
-	gin.ForceConsoleColor()
-
-	ths.GinEngine = gin.New()
-	ths.GinEngine.Use(middleware.GinRecovery(LoggersInstance().AccessLogger, true)).Use(middleware.GinLogger(LoggersInstance().AccessLogger))
-	ths.AddRoutes(func() {
-
-	})
+	err := ths.GinEngine.Run(gConfig.Service.GetServiceAddress())
+	if nil != err {
+		errMsg := fmt.Sprintf("gin-server failed to start: %v", err)
+		if !gConfig.Dev.Debug {
+			loggers.OutPutLogger.Error(errMsg)
+			log.SetOutput(os.Stderr)
+			log.Fatalf(errMsg)
+		} else {
+			loggers.OutPutLogger.Fatal(errMsg)
+		}
+	}
 }
 
+type WindowsService struct {
+	*Service
+}
+
+// Start 不知道这些要干嘛
 func (ths WindowsService) Start() {
 	//TODO implement me
 	panic("implement me")
 }
 
+type UnixService struct {
+	*Service
+}
+
+// Start 不知道这些要干嘛
 func (ths UnixService) Start() {
 	//TODO implement me
 	panic("implement me")

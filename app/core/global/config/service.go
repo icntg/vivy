@@ -9,6 +9,6 @@ type Service struct {
 	TemplateHtml bool   `mapstructure:"template-html" json:"templateHtml" yaml:"template-html"`
 }
 
-func GetServiceAddress(ths *Service) string {
+func (ths *Service) GetServiceAddress() string {
 	return fmt.Sprintf("%s:%d", ths.Host, ths.Port)
 }

@@ -2,7 +2,8 @@ package global
 
 import (
 	"app/core/global/config"
-	"log"
+	"app/core/utility/common"
+	"app/core/utility/errno"
 	"os"
 	"sync"
 )
@@ -15,13 +16,14 @@ var (
 func ConfigInstance() *config.Config {
 	configOnce.Do(func() {
 		systemArgs := SystemArgsInstance()
-		if nil != systemArgs {
-			log.SetOutput(os.Stderr)
-			log.Fatalln("require system args.")
+		if nil == systemArgs {
+			common.ErrPrintf("require system args.\n")
+			os.Exit(errno.ErrorSystemArgs)
 		}
 		if systemArgs.ConfigTemplate != nil && len(*systemArgs.ConfigTemplate) > 0 {
 			// 输出配置模板
 			config.SaveToYamlFile(*systemArgs.ConfigTemplate)
+			// exit
 		} else {
 			// 读取配置文件
 			cfg := config.ReadFromYamlFile(*systemArgs.ConfigFilename)
