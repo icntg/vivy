@@ -1,15 +1,5 @@
 package config
 
-import (
-	"app/core/utility/common"
-	"app/core/utility/errno"
-	"bytes"
-	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
-	"log"
-	"os"
-)
-
 type Config struct {
 	Dev Dev `mapstructure:"dev" json:"dev" yaml:"dev"`
 	Zap Zap `mapstructure:"zap" json:"zap" yaml:"zap"`
@@ -26,50 +16,7 @@ type Config struct {
 	Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 }
 
-func ReadFromYamlFile(filename string) Config {
-	if !common.FileExists(filename) {
-		
-	}
-	v := viper.New()
-	v.SetConfigFile(filename)
-	v.SetConfigType("yaml")
-	err := v.ReadInConfig()
-	if nil != err {
-		log.SetOutput(os.Stderr)
-		log.Fatalf("viper cannot read config [%s]: %v\n", filename, err)
-	}
-	ret := defaultConfig()
-	err = v.Unmarshal(&ret)
-	if nil != err {
-		log.SetOutput(os.Stderr)
-		log.Fatalf("viper cannot unmarshal data [%v]: %v\n", v, err)
-	}
-	return ret
-}
-
-func SaveToYamlFile(filename string) {
-	bs, err := yaml.Marshal(defaultConfig())
-	if nil != err {
-		common.ErrPrintf("yaml cannot marshal DefaultConfig: %v\n", err)
-		os.Exit(errno.ErrorGenerateConfigTemplate)
-	}
-	v := viper.New()
-	v.SetConfigFile(filename)
-	v.SetConfigType("yaml")
-	err = v.ReadConfig(bytes.NewBuffer(bs))
-	if nil != err {
-		common.ErrPrintf("viper cannot read in data [%v]: %v\n", string(bs), err)
-		os.Exit(errno.ErrorGenerateConfigTemplate)
-	}
-	err = v.SafeWriteConfig()
-	if nil != err {
-		common.ErrPrintf("viper cannot write config [%v]: %v\n", filename, err)
-		os.Exit(errno.ErrorGenerateConfigTemplate)
-	}
-	os.Exit(0)
-}
-
-func defaultConfig() Config {
+func DefaultConfig() Config {
 	return Config{
 		Dev{
 			Debug: false,

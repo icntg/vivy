@@ -19,8 +19,8 @@ var (
 
 // SystemArgsInstance /* 命令行参数处理 */
 func SystemArgsInstance() *SystemArgs {
-	common.OutPrintf("VIVY backend app start ...\n")
 	systemArgsOnce.Do(func() {
+		common.OutPrintf("VIVY backend app start ...\n")
 		flagArgConfig := flag.StringP("config", "c", "config.yaml", "Using a custom config file")
 		// 输出模板
 		flagArgTemplate := flag.StringP("output", "o", "", "Output a config file template")
