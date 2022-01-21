@@ -1,7 +1,6 @@
 package global
 
 import (
-	"app/core/utility/common"
 	flag "github.com/spf13/pflag"
 	"sync"
 )
@@ -20,12 +19,12 @@ var (
 // SystemArgsInstance /* 命令行参数处理 */
 func SystemArgsInstance() *SystemArgs {
 	systemArgsOnce.Do(func() {
-		common.OutPrintf("VIVY backend app start ...\n")
 		flagArgConfig := flag.StringP("config", "c", "config.yaml", "Using a custom config file")
 		// 输出模板
 		flagArgTemplate := flag.StringP("output", "o", "", "Output a config file template")
 		flag.Lookup("config").NoOptDefVal = "config.yaml"
 		flag.Lookup("output").NoOptDefVal = ""
+		flag.Parse()
 		if len(*flagArgTemplate) == 0 {
 			flagArgTemplate = nil
 		}

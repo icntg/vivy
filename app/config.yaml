@@ -1,0 +1,45 @@
+captcha:
+  img-height: 60
+  img-width: 120
+  key-long: 5
+casbin:
+  model-path: --TODO--
+cors:
+  mode: --TODO--
+  whitelist: []
+dev:
+  debug: false
+mongodb:
+  host: localhost
+  password: <password>
+  port: 27017
+  username: <username>
+mysql:
+  database: vivy
+  host: localhost
+  log-mode: --TODO--
+  log-zap: true
+  max-idle: 50
+  max-open: 200
+  option: parseTime=true&charset=utf8&loc=Local
+  password: <password>
+  port: 3306
+  username: <username>
+redis:
+  addr: localhost:6379
+  db: 0
+  password: <password>
+service:
+  host: 127.0.0.1
+  port: 9088
+  static-path: ./web
+  template-html: true
+zap:
+  director: ./logs
+  encode-level: --TODO--
+  format: --TODO--
+  level: info
+  log-in-console: true
+  prefix: ""
+  showline: true
+  stacktrace-key: --TODO--

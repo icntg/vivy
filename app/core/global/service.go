@@ -20,10 +20,13 @@ var (
 func ServiceInstance() *Service {
 	serviceOnce.Do(func() {
 		gConfig := ConfigInstance()
+		oLog := LoggersInstance().OutPutLogger
 
 		if gConfig.Dev.Debug {
+			oLog.Info("gin-server uses DebugMode.")
 			gin.SetMode(gin.DebugMode)
 		} else {
+			oLog.Info("gin-server uses ReleaseMode.")
 			gin.SetMode(gin.ReleaseMode)
 		}
 		gin.ForceConsoleColor()
@@ -31,6 +34,7 @@ func ServiceInstance() *Service {
 		instance := Service{}
 		instance.GinEngine = gin.New()
 		instance.GinEngine.Use(middleware.GinRecovery(LoggersInstance().AccessLogger, true)).Use(middleware.GinLogger(LoggersInstance().AccessLogger))
+		instance.Start()
 		serviceInstance = &instance
 	})
 	return serviceInstance
@@ -70,13 +74,13 @@ func AddStaticRoute(engine *gin.Engine) {
 }
 
 func (ths Service) Start() {
-	loggers := LoggersInstance()
+	oLog := LoggersInstance().OutPutLogger
 	gConfig := ConfigInstance()
 
 	startMsg := fmt.Sprintf("gin-server is going to start on [%s] ...",
 		gConfig.Service.GetServiceAddress())
-	loggers.OutPutLogger.Info(startMsg)
-	if !gConfig.Dev.Debug {
+	oLog.Info(startMsg)
+	if !gConfig.Dev.Debug { //
 		log.SetOutput(os.Stdout)
 		log.Println(startMsg)
 		_ = os.Stdout.Sync()
@@ -85,11 +89,11 @@ func (ths Service) Start() {
 	if nil != err {
 		errMsg := fmt.Sprintf("gin-server failed to start: %v", err)
 		if !gConfig.Dev.Debug {
-			loggers.OutPutLogger.Error(errMsg)
+			oLog.Error(errMsg)
 			log.SetOutput(os.Stderr)
 			log.Fatalf(errMsg)
 		} else {
-			loggers.OutPutLogger.Fatal(errMsg)
+			oLog.Fatal(errMsg)
 		}
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -43,7 +44,7 @@ var (
 func LoggersInstance() *Loggers {
 	loggersOnce.Do(func() {
 		cfgInst := ConfigInstance()
-		if nil != cfgInst {
+		if nil == cfgInst {
 			log.SetOutput(os.Stderr)
 			log.Fatalln("require config information.")
 		}
@@ -59,14 +60,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 	)
 	logDir := path.Join(cfgInst.Zap.Director)
 	if !common.FileExists(logDir) {
-		file, err := os.Create(logDir)
-		defer func() {
-			err := file.Close()
-			if nil != err {
-				log.SetOutput(os.Stderr)
-				log.Fatalf("cannot close Log Directory [%s]: %v\n", logDir, err)
-			}
-		}()
+		err := os.MkdirAll(logDir, 0o755)
 		if nil != err {
 			log.SetOutput(os.Stderr)
 			log.Fatalf("cannot create Log Directory [%s]: %v\n", logDir, err)
@@ -138,12 +132,24 @@ func initEncoder() zapcore.Encoder {
 //日志文件切割
 func getWriter(filenamePrefix string, maxAgeDays int, rotationTimeDays int) io.Writer {
 	// 保存30天内的日志，每24小时(整点)分割一次日志
-	hook, err := rotatelogs.New(
-		filenamePrefix+"-%Y%m%d.log",
-		rotatelogs.WithLinkName(filenamePrefix+".log"),
-		rotatelogs.WithMaxAge(time.Duration(maxAgeDays*24)*time.Hour),
-		rotatelogs.WithRotationTime(time.Duration(rotationTimeDays*24)*time.Hour),
+	var (
+		hook *rotatelogs.RotateLogs
+		err  error
 	)
+	if runtime.GOOS == "windows" {
+		hook, err = rotatelogs.New(
+			filenamePrefix+"-%Y%m%d.log",
+			rotatelogs.WithMaxAge(time.Duration(maxAgeDays*24)*time.Hour),
+			rotatelogs.WithRotationTime(time.Duration(rotationTimeDays*24)*time.Hour),
+		)
+	} else {
+		hook, err = rotatelogs.New(
+			filenamePrefix+"-%Y%m%d.log",
+			rotatelogs.WithLinkName(filenamePrefix+".log"),
+			rotatelogs.WithMaxAge(time.Duration(maxAgeDays*24)*time.Hour),
+			rotatelogs.WithRotationTime(time.Duration(rotationTimeDays*24)*time.Hour),
+		)
+	}
 	if err != nil {
 		log.SetOutput(os.Stderr)
 		log.Fatalf("cannot initialize SecureLogger: %v\n", err)

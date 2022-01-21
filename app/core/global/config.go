@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	yaml "gopkg.in/yaml.v2"
 	"os"
+	"path"
 	"sync"
 )
 
@@ -71,6 +72,8 @@ func SaveToYamlFile(filename string) {
 	}
 	v := viper.New()
 	v.SetConfigFile(filename)
+	curDir := common.GetCurrentDirectory()
+	v.AddConfigPath(curDir)
 	v.SetConfigType("yaml")
 	err = v.ReadConfig(bytes.NewBuffer(bs))
 	if nil != err {
@@ -82,5 +85,6 @@ func SaveToYamlFile(filename string) {
 		common.ErrPrintf("viper cannot write config [%v]: %v\n", filename, err)
 		os.Exit(errno.ErrorGenerateConfigTemplate)
 	}
+	common.OutPrintf("config template is written to [%s].", path.Join(curDir, filename))
 	os.Exit(0)
 }

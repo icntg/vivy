@@ -464,15 +464,28 @@ func Substr(s, substr string) string {
 }
 
 func OutPrintf(format string, a ...interface{}) {
-	_, _ = os.Stdout.WriteString(
-		fmt.Sprintf(format, a),
-	)
+	if a == nil {
+		_, _ = os.Stdout.WriteString(
+			fmt.Sprintf(format),
+		)
+	} else {
+		_, _ = os.Stdout.WriteString(
+			fmt.Sprintf(format, a...),
+		)
+	}
+
 	_ = os.Stdout.Sync()
 }
 
 func ErrPrintf(format string, a ...interface{}) {
-	_, _ = os.Stderr.WriteString(
-		fmt.Sprintf(format, a),
-	)
+	if a == nil {
+		_, _ = os.Stderr.WriteString(
+			fmt.Sprintf(format),
+		)
+	} else {
+		_, _ = os.Stderr.WriteString(
+			fmt.Sprintf(format, a...),
+		)
+	}
 	_ = os.Stderr.Sync()
 }
