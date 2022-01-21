@@ -74,7 +74,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		logPath := path.Join(logDir, accessFilename)
 		logWriter = getWriter(logPath, 6*31, 7)
 		if cfgInst.Dev.Debug {
-			logWriter = io.MultiWriter(logWriter, os.Stdout)
+			logWriter = io.MultiWriter(logWriter, os.Stderr)
 		}
 		core := zapcore.NewTee(
 			zapcore.NewCore(encoder, zapcore.AddSync(logWriter), logLevel[cfgInst.Zap.Level]),
@@ -87,7 +87,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		logPath := path.Join(logDir, outputFilename)
 		logWriter = getWriter(logPath, 6*31, 7)
 		if cfgInst.Dev.Debug {
-			logWriter = io.MultiWriter(logWriter, os.Stdout)
+			logWriter = io.MultiWriter(logWriter, os.Stderr)
 		}
 		core := zapcore.NewTee(
 			zapcore.NewCore(encoder, zapcore.AddSync(logWriter), logLevel[cfgInst.Zap.Level]),
@@ -100,7 +100,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		logPath := path.Join(logDir, secureFilename)
 		logWriter = getWriter(logPath, 6*31, 31)
 		if cfgInst.Dev.Debug {
-			logWriter = io.MultiWriter(logWriter, os.Stdout)
+			logWriter = io.MultiWriter(logWriter, os.Stderr)
 		}
 		core := zapcore.NewTee(
 			zapcore.NewCore(encoder, zapcore.AddSync(logWriter), logLevel[cfgInst.Zap.Level]),

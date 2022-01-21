@@ -34,7 +34,7 @@ func ServiceInstance() *Service {
 		instance := Service{}
 		instance.GinEngine = gin.New()
 		instance.GinEngine.Use(middleware.GinRecovery(LoggersInstance().AccessLogger, true)).Use(middleware.GinLogger(LoggersInstance().AccessLogger))
-		instance.Start()
+		//instance.Start()
 		serviceInstance = &instance
 	})
 	return serviceInstance
