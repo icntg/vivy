@@ -6,3 +6,15 @@ func TestDatabaseConnection() {
 	// test redis
 	// test mongodb
 }
+
+func TestMySQLConnection() {
+
+}
+
+func TestRedisConnection() {
+
+}
+
+func TestMongoDBConnection() {
+	
+}

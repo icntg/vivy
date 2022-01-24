@@ -22,9 +22,9 @@ mysql:
   max-idle: 50
   max-open: 200
   option: parseTime=true&charset=utf8&loc=Local
-  password: <password>
+  password: "root"
   port: 3306
-  username: <username>
+  username: "root"
 redis:
   addr: localhost:6379
   db: 0

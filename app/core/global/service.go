@@ -58,7 +58,6 @@ func (ths Service) AddRoutes(addRouteFunctions ...func(engine *gin.Engine)) {
 func AddStaticRoute(engine *gin.Engine) {
 	loggers := LoggersInstance()
 
-	engine.StaticFS("/", http.Dir("../web/dist"))
 	if gin.Mode() == gin.DebugMode {
 		engine.StaticFS("/", http.Dir("../web/dist"))
 	} else {

@@ -56,6 +56,8 @@ func DefaultConfig() Config {
 			200,
 			"--TODO--",
 			true,
+			false,
+			false,
 		},
 		MongoDB{
 			"localhost",
