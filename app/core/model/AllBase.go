@@ -4,7 +4,6 @@ import (
 	"app/core/global"
 	"app/core/utility/common"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/go-xorm/xorm"
 	"net/url"
 )
 

@@ -1,6 +1,10 @@
 package config
 
-import "fmt"
+import (
+	"app/core/utility/common"
+	"fmt"
+	"net/url"
+)
 
 type MySQL struct {
 	Host         string `mapstructure:"host" json:"host" yaml:"host"`             // 服务器地址
@@ -20,8 +24,23 @@ type MySQL struct {
 func (m *MySQL) GetDSN() string {
 	var ret string
 	ret = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-		m.Username,
-		m.Password,
+		url.QueryEscape(m.Username),
+		url.QueryEscape(m.Password),
+		m.Host,
+		m.Port,
+		m.Database,
+	)
+	if len(m.Option) > 0 {
+		ret += "?" + m.Option
+	}
+	return ret
+}
+
+func (m *MySQL) GetDSNWithMask() string {
+	var ret string
+	ret = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+		url.QueryEscape(m.Username),
+		common.CoverWithStars(common.Md5En(m.Password)),
 		m.Host,
 		m.Port,
 		m.Database,

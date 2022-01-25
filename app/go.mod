@@ -13,6 +13,7 @@ require (
 	github.com/spf13/viper v1.10.1
 	go.uber.org/zap v1.20.0
 	gopkg.in/yaml.v2 v2.4.0
+	gorm.io/gorm v1.22.5
 )
 
 require (
@@ -50,7 +51,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
-	gorm.io/gorm v1.22.5 // indirect
+	gorm.io/driver/mysql v1.2.3 // indirect
 	xorm.io/builder v0.3.6 // indirect
 	xorm.io/core v0.7.2-0.20190928055935-90aeac8d08eb // indirect
 )
@@ -74,3 +75,4 @@ require (
 
 /// database
 // gorm.io/gorm
+// gorm.io/driver/mysql

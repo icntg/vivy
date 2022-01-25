@@ -304,13 +304,13 @@ func FileExists(path string) bool {
 	return true
 }
 
-// ReplaceName 替换名字为星号
-func ReplaceName(str string) string {
-	if str == "" {
-		return ""
-	}
-	return string([]rune(str)[:1]) + "**"
-}
+//// ReplaceName 替换名字为星号
+//func ReplaceName(str string) string {
+//	if str == "" {
+//		return ""
+//	}
+//	return string([]rune(str)[:1]) + "**"
+//}
 
 func CoverWithStars(str string) string {
 	sb := strings.Builder{}
