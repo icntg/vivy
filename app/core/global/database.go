@@ -19,7 +19,9 @@ func GormInstance() *gorm.DB {
 		)
 		dsn := ConfigInstance().Mysql.GetDSN()
 		dsnMask := ConfigInstance().Mysql.GetDSNWithMask()
-		gormInstance, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		gormInstance, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+			PrepareStmt: true,
+		})
 		if nil != err {
 			LoggersInstance().OutPutLogger.Fatalf("gorm cannot open with [%s]: %v\n", dsnMask, err)
 		}

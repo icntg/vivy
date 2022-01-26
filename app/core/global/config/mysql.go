@@ -38,7 +38,7 @@ func (m *MySQL) GetDSN() string {
 
 func (m *MySQL) GetDSNWithMask() string {
 	var ret string
-	ret = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+	ret = fmt.Sprintf("mysql://%s:%s@tcp(%s:%d)/%s",
 		url.QueryEscape(m.Username),
 		common.CoverWithStars(common.Md5En(m.Password)),
 		m.Host,

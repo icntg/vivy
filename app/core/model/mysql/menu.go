@@ -1,4 +1,4 @@
-package model
+package mysql
 
 import (
 	"app/utility/entity"

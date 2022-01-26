@@ -13,6 +13,7 @@ func main() {
 	// 初始化日志
 	_ = global.LoggersInstance()
 
+	_ = global.GormInstance()
 	// 启动服务
 	service := global.ServiceInstance()
 	service.AddRoutes(

@@ -8,7 +8,7 @@ cors:
   mode: --TODO--
   whitelist: []
 dev:
-  debug: false
+  debug: true
 mongodb:
   host: localhost
   password: <password>

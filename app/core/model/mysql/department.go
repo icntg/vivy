@@ -1,6 +1,6 @@
-package model
+package mysql
 
-import "app/utility/entity"
+import "app/core/utility/entity"
 
 type Department struct {
 	entity.Entity
