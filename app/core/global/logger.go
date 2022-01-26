@@ -37,21 +37,21 @@ type Loggers struct {
 }
 
 var (
-	loggersInstance *Loggers = nil
-	loggersOnce     sync.Once
+	_loggersInstance *Loggers = nil
+	_loggersOnce     sync.Once
 )
 
-func LoggersInstance() *Loggers {
-	loggersOnce.Do(func() {
-		cfgInst := ConfigInstance()
+func loggersInstance() *Loggers {
+	_loggersOnce.Do(func() {
+		cfgInst := configInstance()
 		if nil == cfgInst {
 			log.SetOutput(os.Stderr)
 			log.Fatalln("require config information.")
 		}
 		loggers := initLoggers(cfgInst)
-		loggersInstance = &loggers
+		_loggersInstance = &loggers
 	})
-	return loggersInstance
+	return _loggersInstance
 }
 
 func initLoggers(cfgInst *config.Config) Loggers {

@@ -13,13 +13,13 @@ import (
 )
 
 var (
-	configInstance *config.Config = nil
-	configOnce     sync.Once
+	_configInstance *config.Config = nil
+	_configOnce     sync.Once
 )
 
-func ConfigInstance() *config.Config {
-	configOnce.Do(func() {
-		systemArgs := SystemArgsInstance()
+func configInstance() *config.Config {
+	_configOnce.Do(func() {
+		systemArgs := systemArgsInstance()
 		if nil == systemArgs {
 			common.ErrPrintf("require system args.\n")
 			os.Exit(errno.ErrorSystemArgs)
@@ -31,14 +31,14 @@ func ConfigInstance() *config.Config {
 		} else {
 			// 读取配置文件
 			cfg := ReadFromYamlFile(*systemArgs.ConfigFilename)
-			configInstance = &cfg
+			_configInstance = &cfg
 		}
 	})
-	return configInstance
+	return _configInstance
 }
 
 func ReadFromYamlFile(filename string) config.Config {
-	systemArgs := SystemArgsInstance()
+	systemArgs := systemArgsInstance()
 
 	if !common.FileExists(filename) {
 		common.ErrPrintf("config file [%s] does not exist.\n", filename)

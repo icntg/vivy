@@ -13,14 +13,14 @@ import (
 )
 
 var (
-	serviceInstance *Service = nil
-	serviceOnce     sync.Once
+	_serviceInstance *Service = nil
+	_serviceOnce     sync.Once
 )
 
-func ServiceInstance() *Service {
-	serviceOnce.Do(func() {
-		gConfig := ConfigInstance()
-		oLog := LoggersInstance().OutPutLogger
+func serviceInstance() *Service {
+	_serviceOnce.Do(func() {
+		gConfig := configInstance()
+		oLog := loggersInstance().OutPutLogger
 
 		if gConfig.Dev.Debug {
 			oLog.Info("gin-server uses DebugMode.")
@@ -33,11 +33,11 @@ func ServiceInstance() *Service {
 
 		instance := Service{}
 		instance.GinEngine = gin.New()
-		instance.GinEngine.Use(middleware.GinRecovery(LoggersInstance().AccessLogger, true)).Use(middleware.GinLogger(LoggersInstance().AccessLogger))
+		instance.GinEngine.Use(middleware.GinRecovery(loggersInstance().AccessLogger, true)).Use(middleware.GinLogger(loggersInstance().AccessLogger))
 		//instance.Start()
-		serviceInstance = &instance
+		_serviceInstance = &instance
 	})
-	return serviceInstance
+	return _serviceInstance
 }
 
 type Service struct {
@@ -56,7 +56,7 @@ func (ths Service) AddRoutes(addRouteFunctions ...func(engine *gin.Engine)) {
 }
 
 func AddStaticRoute(engine *gin.Engine) {
-	loggers := LoggersInstance()
+	loggers := loggersInstance()
 
 	if gin.Mode() == gin.DebugMode {
 		engine.StaticFS("/", http.Dir("../web/dist"))
@@ -73,8 +73,8 @@ func AddStaticRoute(engine *gin.Engine) {
 }
 
 func (ths Service) Start() {
-	oLog := LoggersInstance().OutPutLogger
-	gConfig := ConfigInstance()
+	oLog := loggersInstance().OutPutLogger
+	gConfig := configInstance()
 
 	startMsg := fmt.Sprintf("gin-server is going to start on [%s] ...",
 		gConfig.Service.GetServiceAddress())

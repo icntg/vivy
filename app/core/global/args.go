@@ -12,13 +12,13 @@ type SystemArgs struct {
 }
 
 var (
-	systemArgsInstance *SystemArgs = nil
-	systemArgsOnce     sync.Once
+	_systemArgsInstance *SystemArgs = nil
+	_systemArgsOnce     sync.Once
 )
 
-// SystemArgsInstance /* 命令行参数处理 */
-func SystemArgsInstance() *SystemArgs {
-	systemArgsOnce.Do(func() {
+// systemArgsInstance /* 命令行参数处理 */
+func systemArgsInstance() *SystemArgs {
+	_systemArgsOnce.Do(func() {
 		flagArgConfig := flag.StringP("config", "c", "config.yaml", "Using a custom config file")
 		// 输出模板
 		flagArgTemplate := flag.StringP("output", "o", "", "Output a config file template")
@@ -28,11 +28,11 @@ func SystemArgsInstance() *SystemArgs {
 		if len(*flagArgTemplate) == 0 {
 			flagArgTemplate = nil
 		}
-		systemArgsInstance = &SystemArgs{
+		_systemArgsInstance = &SystemArgs{
 			flagArgConfig,
 			flagArgTemplate,
 			flag.CommandLine.FlagUsages(),
 		}
 	})
-	return systemArgsInstance
+	return _systemArgsInstance
 }

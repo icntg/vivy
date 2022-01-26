@@ -7,15 +7,13 @@ import (
 /* 启动入口函数 */
 func main() {
 	// 命令行参数，获取配置文件等信息
-	_ = global.SystemArgsInstance()
+	_ = global.GetSysArgs()
 	// 加载配置文件
-	_ = global.ConfigInstance()
+	_ = global.GetConfig()
 	// 初始化日志
-	_ = global.LoggersInstance()
-
-	_ = global.GormInstance()
+	_ = global.GetLoggers()
 	// 启动服务
-	service := global.ServiceInstance()
+	service := global.GetGinService()
 	service.AddRoutes(
 		global.AddStaticRoute,
 	)

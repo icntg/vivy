@@ -8,36 +8,36 @@ import (
 )
 
 var (
-	gormInstance *gorm.DB = nil
-	gormOnce     sync.Once
+	_gormInstance *gorm.DB = nil
+	_gormOnce     sync.Once
 )
 
-func GormInstance() *gorm.DB {
-	gormOnce.Do(func() {
+func gormInstance() *gorm.DB {
+	_gormOnce.Do(func() {
 		var (
 			err error
 		)
-		dsn := ConfigInstance().Mysql.GetDSN()
-		dsnMask := ConfigInstance().Mysql.GetDSNWithMask()
-		gormInstance, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		dsn := configInstance().Mysql.GetDSN()
+		dsnMask := configInstance().Mysql.GetDSNWithMask()
+		_gormInstance, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 			PrepareStmt: true,
 		})
 		if nil != err {
-			LoggersInstance().OutPutLogger.Fatalf("gorm cannot open with [%s]: %v\n", dsnMask, err)
+			loggersInstance().OutPutLogger.Fatalf("gorm cannot open with [%s]: %v\n", dsnMask, err)
 		}
-		sqlDB, err := gormInstance.DB()
+		sqlDB, err := _gormInstance.DB()
 		if nil != err {
-			LoggersInstance().OutPutLogger.Fatalf("gormInstance cannot call DB: %v\n", err)
+			loggersInstance().OutPutLogger.Fatalf("_gormInstance cannot call DB: %v\n", err)
 		}
-		sqlDB.SetMaxOpenConns(ConfigInstance().Mysql.MaxOpen)
-		sqlDB.SetMaxIdleConns(ConfigInstance().Mysql.MaxIdle)
+		sqlDB.SetMaxOpenConns(configInstance().Mysql.MaxOpen)
+		sqlDB.SetMaxIdleConns(configInstance().Mysql.MaxIdle)
 		stats, err := json.Marshal(sqlDB.Stats())
 		if nil != err {
-			LoggersInstance().OutPutLogger.Fatalf("sqlDB cannot call Stats: %v\n", err)
+			loggersInstance().OutPutLogger.Fatalf("sqlDB cannot call Stats: %v\n", err)
 		}
-		LoggersInstance().OutPutLogger.Infof("gorm open with [%s]: %s\n", dsnMask, string(stats))
+		loggersInstance().OutPutLogger.Infof("gorm open with [%s]: %s\n", dsnMask, string(stats))
 	})
-	return gormInstance
+	return _gormInstance
 }
 
 func TestDatabaseConnection() {

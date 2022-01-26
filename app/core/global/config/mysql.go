@@ -1,7 +1,6 @@
 package config
 
 import (
-	"app/core/utility/common"
 	"fmt"
 	"net/url"
 )
@@ -40,7 +39,7 @@ func (m *MySQL) GetDSNWithMask() string {
 	var ret string
 	ret = fmt.Sprintf("mysql://%s:%s@tcp(%s:%d)/%s",
 		url.QueryEscape(m.Username),
-		common.CoverWithStars(common.Md5En(m.Password)),
+		"**********",
 		m.Host,
 		m.Port,
 		m.Database,
