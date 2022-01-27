@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	KeyBitLength  = 128
-	KeyByteLength = KeyBitLength >> 3
+	KeyBitLength    = 128
+	KeyByteLength   = KeyBitLength >> 3
+	BlockByteLength = 128 >> 3
 )
 
 var (
@@ -69,7 +70,6 @@ func (d DataAES128GCM) Encrypt() ([]byte, error) {
 	} else {
 		d.Nonce = d.Nonce[:nonceSize]
 	}
-
 	encKey, macKey, err := d.MakeKeys()
 	if nil != err {
 		return nil, err
@@ -90,6 +90,10 @@ func (d DataAES128GCM) Encrypt() ([]byte, error) {
 }
 
 func (d DataAES128GCM) Decrypt() ([]byte, error) {
+	var (
+		nonce      []byte = nil
+		encWithTag []byte = nil
+	)
 	if nil == d.SharedKey {
 		return nil, errors.Errorf("crypto.aes128gcm.Decrypt: sharedKey is nil")
 	}
@@ -100,9 +104,21 @@ func (d DataAES128GCM) Decrypt() ([]byte, error) {
 	if nil != err {
 		return nil, errors.Errorf("crypto.aes128gcm.Decrypt: nonce size")
 	}
-	d.Nonce = d.Data[:nonceSize]
-	encWithTag := d.Data[nonceSize:]
-	encKey, macKey, err := d.MakeKeys()
+	if nil != d.Nonce && len(d.Nonce) == nonceSize {
+		nonce = d.Nonce
+		encWithTag = d.Data
+	} else if len(d.Data) > nonceSize && (len(d.Data)-nonceSize)%BlockByteLength == 0 {
+		nonce = d.Data[:nonceSize]
+		encWithTag = d.Data[nonceSize:]
+	} else {
+		return nil, errors.Errorf("crypto.aes128gcm.Decrypt: data size")
+	}
+	x := DataAES128GCM{
+		SharedKey: d.SharedKey,
+		Data:      encWithTag,
+		Nonce:     nonce,
+	}
+	encKey, macKey, err := x.MakeKeys()
 	if nil != err {
 		return nil, err
 	}
@@ -114,7 +130,7 @@ func (d DataAES128GCM) Decrypt() ([]byte, error) {
 	if nil != err {
 		return nil, errors.Errorf("crypto.aes128gcm.Decrypt: cipher.NewGCM")
 	}
-	message, err := aesGCM.Open(nil, d.Nonce, encWithTag, macKey)
+	message, err := aesGCM.Open(nil, x.Nonce, encWithTag, macKey)
 	if nil != err {
 		return nil, err
 	}
