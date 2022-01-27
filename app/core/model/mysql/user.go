@@ -7,14 +7,16 @@ import (
 
 type User struct {
 	entity.Entity
-	Code          string    `json:"code" xorm:"not null comment('工号') VARCHAR(50) unique"`
-	Name          string    `json:"name" xorm:"not null comment('姓名') VARCHAR(50) index"`
-	LoginName     string    `json:"login_name" xorm:"not null default '' comment('用户登录名') VARCHAR(50) unique"`
-	Password      string    `json:"password" xorm:"not null comment('密码') VARCHAR(50)"`
-	Salt          string    `json:"salt" xorm:"not null comment('盐') VARCHAR(50)"`
-	Token         string    `json:"token" xorm:"not null comment('Google令牌') VARCHAR(100)"`
-	Phone         string    `json:"phone" xorm:"not null default '' comment('手机号') VARCHAR(20) index"`
-	Avatar        string    `json:"avatar" xorm:"not null default '' comment('头像') VARCHAR(300)"`
-	LastLoginTime time.Time `json:"last_login_time" xorm:"not null default '0000-00-00 00:00:00' comment('最近登录时间') DATETIME"`
-	LastLoginIp   string    `json:"last_login_ip" xorm:"not null default '' comment('最近登录IP') VARCHAR(50)"`
+	Code          string    `json:"code" gorm:"type:VARCHAR(20);not null;uniqueIndex;comment:'工号'"`
+	Name          string    `json:"name" gorm:"type:VARCHAR(20);not null;comment:'姓名'"`
+	LoginName     string    `json:"login_name" gorm:"type:VARCHAR(20);uniqueIndex;comment:'登录名/昵称'"`
+	EMail         string    `json:"email" gorm:"type:VARCHAR(100);uniqueIndex;comment:'邮箱（可登录）'"`
+	Telephone     string    `json:"telephone" gorm:"type:VARCHAR(100);comment:'座机'"`
+	MobilePhone   string    `json:"mobile_phone" gorm:"type:VARCHAR(100);comment:'手机'"`
+	Avatar        string    `json:"avatar" gorm:"type:TEXT;comment:'头像'"`
+	Password      string    `json:"-" gorm:"type:VARCHAR(50);comment:'密码'"`
+	Salt          string    `json:"-" gorm:"type:VARCHAR(50);comment:'密码盐'"`
+	Token         string    `json:"-" gorm:"type:VARCHAR(50);comment:'Google令牌'"`
+	LastLoginTime time.Time `json:"last_login_time" gorm:"type:DATETIME;comment:'最近登录时间'"`
+	LastLoginIp   string    `json:"last_login_ip" gorm:"type:VARCHAR(50);comment:'最近登录IP'"`
 }
