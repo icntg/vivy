@@ -1,4 +1,4 @@
-package mysql
+package system
 
 // init database
 
