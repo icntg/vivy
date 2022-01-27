@@ -17,6 +17,7 @@ type UserAdminService interface {
 }
 
 type RoleAdminService interface {
+	GetRoleList()
 }
 
 type UserRoleAdminService interface {

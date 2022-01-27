@@ -14,43 +14,37 @@ const (
 	IVLen  = 8
 )
 
+var (
+	hashFunc = md5.New
+)
+
+type Message []byte
+type Encrypted []byte
+type EncKey []byte
+type MacKey []byte
+
 // [MAC][IV][Encrypted]
 // encKey = hmac_md5(iv, key)
 // macKey = hmac_md5(key, iv)
 // Encrypted = rc4(encKey, message)
 // MAC = hmac_md5(macKey, iv + message)
 
-type DataRC4MD5 crypto.DataCrypto
-
-func (d DataRC4MD5) MakeKeys() ([]byte, []byte, error) {
-	if nil == d.SharedKey {
-		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: sharedKey is nil")
+func (message Message) EncryptToStream(sharedKey []byte, optionalNonce []byte) (Encrypted, error) {
+	var (
+		nonce []byte = nil
+	)
+	if nil == sharedKey {
+		return nil, errors.Errorf("crypto.rc4md5.EncryptToStream: sharedKey is nil")
 	}
-	if nil == d.Nonce || len(d.Nonce) != IVLen {
-		return nil, nil, errors.Errorf("crypto.rc4md5.MakeKeys: IV is incorrect")
+	if nil == message {
+		return nil, errors.Errorf("crypto.rc4md5.EncryptToStream: message is nil")
 	}
-	he := hmac.New(md5.New, d.Nonce)
-	he.Write(d.SharedKey)
-	encKey := he.Sum(nil)
-	hm := hmac.New(md5.New, d.SharedKey)
-	hm.Write(d.Nonce)
-	macKey := hm.Sum(nil)
-	return encKey, macKey, nil
-}
-
-func (d DataRC4MD5) Encrypt() ([]byte, error) {
-	if nil == d.SharedKey {
-		return nil, errors.Errorf("crypto.rc4md5.Encrypt: sharedKey is nil")
-	}
-	if nil == d.Data {
-		return nil, errors.Errorf("crypto.rc4md5.Encrypt: data is nil")
-	}
-	if nil == d.Nonce || len(d.Nonce) < IVLen {
-		d.Nonce = crypto.Rand(IVLen, true)
+	if nil == optionalNonce || len(optionalNonce) < IVLen {
+		nonce = crypto.Rand(IVLen, true)
 	} else {
-		d.Nonce = d.Nonce[:IVLen]
+		nonce = optionalNonce[:IVLen]
 	}
-	encKey, macKey, err := d.MakeKeys()
+	encKey, macKey, err := crypto.MakeKeys(hashFunc, sharedKey, nonce)
 	if nil != err {
 		return nil, err
 	}
@@ -58,44 +52,78 @@ func (d DataRC4MD5) Encrypt() ([]byte, error) {
 	if nil != err {
 		return nil, err
 	}
-	buffer := make([]byte, MACLen+IVLen+len(d.Data))
-	copy(buffer[MACLen:], d.Nonce)
-	cipher.XORKeyStream(buffer[MACLen+IVLen:], d.Data)
-	h := hmac.New(md5.New, macKey)
-	h.Write(buffer[MACLen:])
-	mac := h.Sum(nil)
-	copy(buffer, mac)
+	b := BlockRC4MD5{
+		MAC:   nil,
+		Nonce: nonce,
+		Data:  make(Message, len(message)),
+	}
+
+	cipher.XORKeyStream(b.Data, message)
+	h := hmac.New(hashFunc, macKey)
+	h.Write(b.Nonce)
+	h.Write(b.Data)
+	b.MAC = h.Sum(nil)
+	encrypted, err := b.ToStream()
+	if nil != err {
+		return nil, err
+	}
+	return encrypted, nil
+}
+
+func (encrypted Encrypted) DecryptFromStream(sharedKey []byte) (Message, error) {
+	if nil == encrypted {
+		return nil, errors.Errorf("crypto.rc4md5.DecryptFromStream: encrypted is nil")
+	}
+	if nil == sharedKey {
+		return nil, errors.Errorf("crypto.rc4md5.DecryptFromStream: sharedKey is nil")
+	}
+	b := BlockRC4MD5{}
+	if err := b.FromStream(encrypted); nil != err {
+		return nil, err
+	}
+	encKey, macKey, err := crypto.MakeKeys(hashFunc, sharedKey, b.Nonce)
+	if nil != err {
+		return nil, err
+	}
+	h := hmac.New(hashFunc, macKey)
+	h.Write(b.Nonce)
+	h.Write(b.Data)
+	realMAC := h.Sum(nil)
+	if !bytes.Equal(realMAC, b.MAC) {
+		return nil, errors.Errorf("crypto.rc4md5.DecryptFromStream: MAC verify failed")
+	}
+	cipher, err := rc4.NewCipher(encKey)
+	if nil != err {
+		return nil, err
+	}
+	buffer := make([]byte, len(b.Data))
+	cipher.XORKeyStream(buffer, b.Data)
 	return buffer, nil
 }
 
-func (d DataRC4MD5) Decrypt() ([]byte, error) {
-	if nil == d.SharedKey {
-		return nil, errors.Errorf("crypto.rc4md5.Decrypt: sharedKey is nil")
+type BlockRC4MD5 crypto.Block
+
+func (d *BlockRC4MD5) FromStream(encrypted Encrypted) error {
+	var ()
+	if len(encrypted) <= MACLen+IVLen {
+		return errors.Errorf("crypto.rc4md5.FromStream: encrypted is too short")
+	}
+	d.MAC = encrypted[:MACLen]
+	d.Nonce = encrypted[MACLen:][:IVLen]
+	d.Data = encrypted[MACLen:][:IVLen]
+	return nil
+}
+
+func (d *BlockRC4MD5) ToStream() (Encrypted, error) {
+	if nil == d.Nonce {
+		return nil, errors.Errorf("crypto.rc4md5.ToStream: Nonce is nil")
 	}
 	if nil == d.Data {
-		return nil, errors.Errorf("crypto.rc4md5.Decrypt: encrypted is nil")
+		return nil, errors.Errorf("crypto.rc4md5.ToStream: Data is nil")
 	}
-	if len(d.Data) <= MACLen+IVLen+1 {
-		return nil, errors.Errorf("crypto.rc4md5.Decrypt: encrypted is too short")
-	}
-	expectMac := d.Data[0:MACLen]
-	d.Nonce = d.Data[MACLen : MACLen+IVLen]
-	encKey, macKey, err := d.MakeKeys()
-	if nil != err {
-		return nil, err
-	}
-	h := hmac.New(md5.New, macKey)
-	h.Write(d.Data[MACLen:])
-	calcMac := h.Sum(nil)
-	if !bytes.Equal(expectMac, calcMac) {
-		return nil, errors.Errorf("crypto.rc4md5.Decrypt: MAC verify failed")
-	}
-
-	cipher, err := rc4.NewCipher(encKey)
-	if nil != err {
-		return nil, err
-	}
-	buffer := make([]byte, len(d.Data)-MACLen-IVLen)
-	cipher.XORKeyStream(buffer, d.Data[MACLen+IVLen:])
+	buffer := make([]byte, MACLen+IVLen+len(d.Data))
+	copy(buffer, d.MAC)
+	copy(buffer[MACLen:], d.Nonce)
+	copy(buffer[MACLen+IVLen:], d.Data)
 	return buffer, nil
 }

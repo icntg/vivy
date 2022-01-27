@@ -4,7 +4,6 @@ import (
 	"app/core/utility/crypto"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/hmac"
 	"crypto/sha256"
 	"github.com/pkg/errors"
 )
@@ -17,7 +16,7 @@ const (
 
 var (
 	nonceSize = -1
-	HashFunc  = sha256.New
+	hashFunc  = sha256.New
 )
 
 func getNonceSize() (int, error) {
@@ -36,104 +35,115 @@ func getNonceSize() (int, error) {
 	return nonceSize, nil
 }
 
-type DataAES256GCM crypto.DataCrypto
+type Message []byte
+type Encrypted []byte
 
-func (d DataAES256GCM) MakeKeys() ([]byte, []byte, error) {
-	if nil == d.SharedKey {
-		return nil, nil, errors.Errorf("crypto.aes256gcm.MakeKeys: sharedKey is nil")
+func (message Message) EncryptToStream(sharedKey []byte, optionalNonce []byte) (Encrypted, error) {
+	var (
+		nonce     []byte = nil
+		nonceSize int
+		err       error
+	)
+	if nil == message {
+		return nil, errors.Errorf("crypto.aes256gcm.EncryptToStream: message is nil")
 	}
-	if nil == d.Nonce {
-		return nil, nil, errors.Errorf("crypto.aes256gcm.MakeKeys: IV is nil")
-	}
-	he := hmac.New(HashFunc, d.Nonce)
-	he.Write(d.SharedKey)
-	encKey := he.Sum(nil)
-	hm := hmac.New(HashFunc, d.SharedKey)
-	hm.Write(d.Nonce)
-	macKey := hm.Sum(nil)
-	return encKey, macKey, nil
-}
+	if nil == sharedKey {
+		return nil, errors.Errorf("crypto.aes256gcm.EncryptToStream: sharedKey is nil")
 
-func (d DataAES256GCM) Encrypt() ([]byte, error) {
-	if nil == d.SharedKey {
-		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: sharedKey is nil")
 	}
-	if nil == d.Data {
-		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: data is nil")
+	if nonceSize, err = getNonceSize(); nil != err {
+		return nil, err
 	}
-	nonceSize, err := getNonceSize()
-	if nil != err {
-		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: nonce size")
-	}
-	if nil == d.Nonce || len(d.Nonce) < nonceSize {
-		d.Nonce = crypto.Rand(nonceSize, true)
+	if nil != optionalNonce && len(optionalNonce) >= nonceSize {
+		nonce = optionalNonce[:nonceSize]
 	} else {
-		d.Nonce = d.Nonce[:nonceSize]
+		nonce = crypto.Rand(nonceSize, true)
 	}
 
-	encKey, macKey, err := d.MakeKeys()
+	encKey, macKey, err := crypto.MakeKeys(hashFunc, sharedKey, nonce)
 	if nil != err {
 		return nil, err
 	}
 	block, err := aes.NewCipher(encKey)
 	if nil != err {
-		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: aes.NewCipher")
+		return nil, err
 	}
 	aesGCM, err := cipher.NewGCM(block)
 	if nil != err {
-		return nil, errors.Errorf("crypto.aes256gcm.Encrypt: cipher.NewGCM")
+		return nil, err
 	}
-	encWithTag := aesGCM.Seal(nil, d.Nonce, d.Data, macKey)
-	encrypted := make([]byte, nonceSize+len(encWithTag))
-	copy(encrypted, d.Nonce)
-	copy(encrypted[nonceSize:], encWithTag)
+	b := BlockAES128GCM{Nonce: nonce}
+	b.Data = aesGCM.Seal(nil, nonce, message, macKey)
+	encrypted, err := b.ToStream()
+	if nil != err {
+		return nil, err
+	}
 	return encrypted, nil
 }
 
-func (d DataAES256GCM) Decrypt() ([]byte, error) {
-	var (
-		nonce      []byte = nil
-		encWithTag []byte = nil
-	)
-	if nil == d.SharedKey {
-		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: sharedKey is nil")
+func (encrypted Encrypted) DecryptFromStream(sharedKey []byte) (Message, error) {
+	if nil == encrypted {
+		return nil, errors.Errorf("crypto.aes256gcm.DecryptFromStream: encrypted is nil")
 	}
-	if nil == d.Data {
-		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: data is nil")
+	if nil == sharedKey {
+		return nil, errors.Errorf("crypto.aes256gcm.DecryptFromStream: sharedKey is nil")
+
 	}
-	nonceSize, err := getNonceSize()
-	if nil != err {
-		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: nonce size")
+
+	b := BlockAES128GCM{}
+	if err := b.FromStream(encrypted); nil != err {
+		return nil, err
 	}
-	if nil != d.Nonce && len(d.Nonce) == nonceSize {
-		nonce = d.Nonce
-		encWithTag = d.Data
-	} else if len(d.Data) > nonceSize && (len(d.Data)-nonceSize)%BlockByteLength == 0 {
-		nonce = d.Data[:nonceSize]
-		encWithTag = d.Data[nonceSize:]
-	} else {
-		return nil, errors.Errorf("crypto.aes128gcm.Decrypt: data size")
-	}
-	x := DataAES256GCM{
-		SharedKey: d.SharedKey,
-		Data:      encWithTag,
-		Nonce:     nonce,
-	}
-	encKey, macKey, err := x.MakeKeys()
+	encKey, macKey, err := crypto.MakeKeys(hashFunc, sharedKey, b.Nonce)
 	if nil != err {
 		return nil, err
 	}
+
 	block, err := aes.NewCipher(encKey)
 	if nil != err {
-		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: aes.NewCipher")
+		return nil, errors.Errorf("crypto.aes256gcm.DecryptFromStream: aes.NewCipher")
 	}
 	aesGCM, err := cipher.NewGCM(block)
 	if nil != err {
-		return nil, errors.Errorf("crypto.aes256gcm.Decrypt: cipher.NewGCM")
+		return nil, errors.Errorf("crypto.aes256gcm.DecryptFromStream: cipher.NewGCM")
 	}
-	message, err := aesGCM.Open(nil, d.Nonce, encWithTag, macKey)
+	message, err := aesGCM.Open(nil, b.Nonce, b.Data, macKey)
 	if nil != err {
 		return nil, err
 	}
 	return message, nil
+}
+
+type BlockAES128GCM crypto.Block
+
+func (b *BlockAES128GCM) FromStream(encrypted Encrypted) error {
+	var (
+		nonceSize int
+		err       error
+	)
+	if nonceSize, err = getNonceSize(); nil != err {
+		return err
+	}
+	if len(encrypted) <= nonceSize {
+		return errors.Errorf("crypto.aes256gcm.FromStream: encrypted is too short")
+	}
+	b.Nonce = encrypted[:nonceSize]
+	b.Data = encrypted[nonceSize:]
+	//if len(b.Data)%BlockByteLength != 0 {
+	//	return errors.Errorf("crypto.aes256gcm.FromStream: encrypted length wrong")
+	//}
+	return nil
+}
+
+func (b *BlockAES128GCM) ToStream() (Encrypted, error) {
+	if nil == b.Nonce {
+		return nil, errors.Errorf("crypto.aes256gcm.ToStream: Nonce is nil")
+	}
+	if nil == b.Data {
+		return nil, errors.Errorf("crypto.aes256gcm.ToStream: Data is nil")
+	}
+	buffer := make([]byte, len(b.Nonce)+len(b.Data))
+	copy(buffer, b.Nonce)
+	copy(buffer[len(b.Nonce):], b.Data)
+	return buffer, nil
 }
