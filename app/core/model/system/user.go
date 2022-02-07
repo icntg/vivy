@@ -20,3 +20,7 @@ type User struct {
 	LastLoginTime time.Time `json:"last_login_time" gorm:"type:DATETIME;comment:'最近登录时间'"`
 	LastLoginIp   string    `json:"last_login_ip" gorm:"type:VARCHAR(50);comment:'最近登录IP'"`
 }
+
+func (t *User) TableName() string {
+	return "sys_user"
+}

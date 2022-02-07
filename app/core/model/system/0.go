@@ -27,7 +27,7 @@ type InitData interface {
 // MysqlDataInitialize Mysql 初始化接口使用封装
 // Author [SliverHorn](https://github.com/SliverHorn)
 func MysqlDataInitialize(inits ...InitData) error {
-	var entity SysMenu
+	var entity RcMenu
 	for i := 0; i < len(inits); i++ {
 		if inits[i].TableName() == entity.TableName() {
 			if k := inits[i].CheckDataExist(); k {

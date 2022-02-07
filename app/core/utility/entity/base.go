@@ -6,7 +6,7 @@ import (
 )
 
 type Entity struct {
-	DatabaseId   uint64         `json:"-" gorm:"type:BIGINT UNSIGNED;primaryKey;autoIncrement:true;comment:'数据库主键'"`
+	DatabaseId   uint64         `json:"-" gorm:"column:_id;type:BIGINT UNSIGNED;primaryKey;autoIncrement:true;comment:'数据库主键'"`
 	Service      ServiceEntity  `gorm:"embedded"`
 	DisplayOrder int            `json:"-" gorm:"type:INT;index:idx_display_order;comment:'显示顺序'"`
 	Available    int            `json:"-" gorm:"default:1;type:INT;index:idx_available;comment:'可用状态'"`

@@ -4,7 +4,7 @@ import (
 	"app/core/utility/crypto"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/md5"
+	"crypto/sha1"
 	"github.com/pkg/errors"
 )
 
@@ -16,7 +16,7 @@ const (
 
 var (
 	nonceSize = -1
-	hashFunc  = md5.New
+	hashFunc  = sha1.New
 )
 
 func getNonceSize() (int, error) {
@@ -61,6 +61,7 @@ func (message Message) EncryptToStream(sharedKey []byte, optionalNonce []byte) (
 	}
 
 	encKey, macKey, err := crypto.MakeKeys(hashFunc, sharedKey, nonce)
+	encKey = encKey[:KeyByteLength]
 	if nil != err {
 		return nil, err
 	}
@@ -94,6 +95,7 @@ func (encrypted Encrypted) DecryptFromStream(sharedKey []byte) (Message, error) 
 		return nil, err
 	}
 	encKey, macKey, err := crypto.MakeKeys(hashFunc, sharedKey, b.Nonce)
+	encKey = encKey[:KeyByteLength]
 	if nil != err {
 		return nil, err
 	}
