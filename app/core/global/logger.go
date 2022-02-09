@@ -1,7 +1,7 @@
 package global
 
 import (
-	"app/core/global/config"
+	"app/core/system/config"
 	"app/core/utility/common"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"

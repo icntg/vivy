@@ -1,7 +1,7 @@
 package global
 
 import (
-	"app/core/global/config"
+	"app/core/system/config"
 	"app/core/utility/common"
 	"app/core/utility/errno"
 	"bytes"

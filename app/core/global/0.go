@@ -1,7 +1,14 @@
 package global
 
+// 全局变量，包括：
+//1系统参数
+//2配置文件信息
+//3日志对象
+//4数据访问对象
+//5http服务对象
+
 import (
-	"app/core/global/config"
+	"app/core/system/config"
 	"gorm.io/gorm"
 )
 
