@@ -17,10 +17,11 @@ func gormInstance() *gorm.DB {
 		var (
 			err error
 		)
-		dsn := configInstance().Mysql.GetDSN()
-		dsnMask := configInstance().Mysql.GetDSNWithMask()
+		dsn := configInstance().DataSource.MySQL.GetDSN()
+		dsnMask := configInstance().DataSource.MySQL.GetDSNWithMask()
 		_gormInstance, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 			PrepareStmt: true,
+			Logger:      *loggersInstance().GormLogger,
 		})
 		if nil != err {
 			loggersInstance().OutPutLogger.Fatalf("gorm cannot open with [%s]: %v\n", dsnMask, err)
@@ -29,8 +30,8 @@ func gormInstance() *gorm.DB {
 		if nil != err {
 			loggersInstance().OutPutLogger.Fatalf("_gormInstance cannot call DB: %v\n", err)
 		}
-		sqlDB.SetMaxOpenConns(configInstance().Mysql.MaxOpen)
-		sqlDB.SetMaxIdleConns(configInstance().Mysql.MaxIdle)
+		sqlDB.SetMaxOpenConns(configInstance().DataSource.MySQL.MaxOpen)
+		sqlDB.SetMaxIdleConns(configInstance().DataSource.MySQL.MaxIdle)
 		stats, err := json.Marshal(sqlDB.Stats())
 		if nil != err {
 			loggersInstance().OutPutLogger.Fatalf("sqlDB cannot call Stats: %v\n", err)

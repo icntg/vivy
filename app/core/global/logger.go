@@ -6,6 +6,7 @@ import (
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gorm.io/gorm/logger"
 	"io"
 	"log"
 	"os"
@@ -34,6 +35,7 @@ type Loggers struct {
 	OutPutLogger *zap.SugaredLogger
 	AccessLogger *zap.Logger
 	SecureLogger *zap.SugaredLogger
+	GormLogger   *logger.Interface
 }
 
 var (
@@ -56,7 +58,8 @@ func loggersInstance() *Loggers {
 
 func initLoggers(cfgInst *config.Config) Loggers {
 	var (
-		logWriter io.Writer
+		logWriter    io.Writer
+		outputWriter io.Writer
 	)
 	logDir := path.Join(cfgInst.Zap.Director)
 	if !common.FileExists(logDir) {
@@ -68,7 +71,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 	}
 	encoder := initEncoder()
 
-	loggers := Loggers{nil, nil, nil}
+	loggers := Loggers{nil, nil, nil, nil}
 	// accessLogger
 	{
 		logPath := path.Join(logDir, accessFilename)
@@ -83,14 +86,13 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		loggers.AccessLogger = tmpLog
 	}
 	// outputLogger
+	outputWriter = getWriter(path.Join(logDir, outputFilename), 6*31, 7)
+	if cfgInst.Dev.Debug {
+		outputWriter = io.MultiWriter(outputWriter, os.Stderr)
+	}
 	{
-		logPath := path.Join(logDir, outputFilename)
-		logWriter = getWriter(logPath, 6*31, 7)
-		if cfgInst.Dev.Debug {
-			logWriter = io.MultiWriter(logWriter, os.Stderr)
-		}
 		core := zapcore.NewTee(
-			zapcore.NewCore(encoder, zapcore.AddSync(logWriter), logLevel[cfgInst.Zap.Level]),
+			zapcore.NewCore(encoder, zapcore.AddSync(outputWriter), logLevel[cfgInst.Zap.Level]),
 		)
 		tmpLog := zap.New(core, zap.AddCaller())
 		loggers.OutPutLogger = tmpLog.Sugar()
@@ -107,6 +109,20 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		)
 		tmpLog := zap.New(core, zap.AddCaller())
 		loggers.SecureLogger = tmpLog.Sugar()
+	}
+	// dataLogger
+	{
+		tmpLog := logger.New(
+			log.New(outputWriter, "\n", log.LstdFlags), // io writer（日志输出的目标，前缀和日志包含的内容——译者注）
+			logger.Config{
+				SlowThreshold:             time.Second,   // 慢 SQL 阈值
+				LogLevel:                  logger.Silent, // 日志级别
+				IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
+				Colorful:                  false,         // 禁用彩色打印
+			},
+		)
+		loggers.GormLogger = &tmpLog
+		//loggers.DataLogger = log.New(io.MultiWriter(os.Stderr, ))
 	}
 	return loggers
 }

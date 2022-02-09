@@ -7,31 +7,35 @@ casbin:
 cors:
   mode: --TODO--
   whitelist: []
+data-source:
+  mongodb:
+    host: localhost
+    password: <password>
+    port: 27017
+    username: <username>
+  mysql:
+    database: vivy
+    host: localhost
+    log-mode: --TODO--
+    log-zap: true
+    max-idle: 20
+    max-open: 100
+    option: parseTime=true&charset=utf8&loc=Local
+    password: <password>
+    port: 3306
+    show-exec-time: false
+    show-sql: false
+    username: <username>
+  redis:
+    addr: localhost:6379
+    db: 0
+    password: <password>
 dev:
-  debug: true
-mongodb:
-  host: localhost
-  password: <password>
-  port: 27017
-  username: <username>
-mysql:
-  database: vivy
-  host: localhost
-  log-mode: --TODO--
-  log-zap: true
-  max-idle: 50
-  max-open: 200
-  option: parseTime=true&charset=utf8&loc=Local
-  password: "root"
-  port: 3306
-  username: "root"
-redis:
-  addr: localhost:6379
-  db: 0
-  password: <password>
+  debug: false
 service:
   host: 127.0.0.1
   port: 9088
+  session-secret: 1234567890abcdef
   static-path: ./web
   template-html: true
 zap:

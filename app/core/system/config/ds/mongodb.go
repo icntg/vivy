@@ -1,4 +1,4 @@
-package config
+package ds
 
 type MongoDB struct {
 	Host     string `mapstructure:"host" json:"host" yaml:"host"`
