@@ -4,6 +4,7 @@ import (
 	"app/core/global"
 	"app/core/utility/common"
 	"app/core/utility/errno"
+	"app/core/web/model/system"
 	"database/sql"
 	"fmt"
 	"gorm.io/driver/mysql"
@@ -46,6 +47,13 @@ func InitDatabase() {
 
 	gormDB, err := gorm.Open(mysql.New(mysql.Config{
 		Conn: conn,
-	}), &gorm.Config{})
-	gormDB.AutoMigrate()
+	}), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
+	if nil != err {
+		common.ErrPrintf("gorm cannot open database with [sql connection]: %v\n", err)
+		os.Exit(errno.ErrorConnectDatabase)
+	}
+	err = gormDB.AutoMigrate(system.User{})
+	return
 }
