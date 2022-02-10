@@ -13,6 +13,11 @@ import (
 // 仅保持用户ID
 // Set-Cookie: PHPSESSID=1dhpndum9ltrtpk8hnrqp5o3is; path=/
 
+const CookieName = "PHPSESSID"
+const MACLen = 5
+const IVLen = 4
+const CookieLen = 8
+
 type PHPSessionId struct {
 	UserIntId uint32
 	StartTime uint32
@@ -21,21 +26,21 @@ type PHPSessionId struct {
 type JWT string
 
 func (s *PHPSessionId) Encode(sharedKey []byte) string {
-	nonce := crypto.Rand(4, true)
+	nonce := crypto.Rand(IVLen, true)
 	encKey, macKey, _ := crypto.MakeKeys(md5.New, sharedKey, nonce)
-	src := make([]byte, 8)
+	src := make([]byte, CookieLen)
 	for i := 0; i < 4; i++ {
 		src[i] = byte((s.UserIntId >> (8 * i)) & 0xff)
 		src[i+4] = byte((s.StartTime >> (8 * i)) & 0xff)
 	}
-	dst := make([]byte, 17)
-	copy(dst[5:], nonce)
+	dst := make([]byte, MACLen+IVLen+CookieLen)
+	copy(dst[MACLen:], nonce)
 	cipher, _ := rc4.NewCipher(encKey)
-	cipher.XORKeyStream(dst[9:], src)
+	cipher.XORKeyStream(dst[MACLen+IVLen:], src)
 	h := hmac.New(md5.New, macKey)
-	h.Write(dst[5:])
+	h.Write(dst[MACLen:])
 	mac := h.Sum(nil)
-	copy(dst, mac[:5])
+	copy(dst, mac[:MACLen])
 	return base36.EncodeToStringLc(dst)
 }
 
@@ -44,21 +49,21 @@ func (s *JWT) Decode(sharedKey []byte) (*PHPSessionId, error) {
 	if nil != err {
 		return nil, err
 	}
-	if len(stream) != 17 {
+	if len(stream) != MACLen+IVLen+CookieLen {
 		return nil, errors.Errorf("jwt decode length error")
 	}
-	nonce := stream[5:9]
+	nonce := stream[MACLen : MACLen+IVLen]
 	encKey, macKey, _ := crypto.MakeKeys(md5.New, sharedKey, nonce)
-	expectMac := stream[:5]
+	expectMac := stream[:MACLen]
 	h := hmac.New(md5.New, macKey)
-	h.Write(stream[5:])
-	realMac := h.Sum(nil)
+	h.Write(stream[MACLen:])
+	realMac := h.Sum(nil)[:MACLen]
 	if !bytes.Equal(expectMac, realMac) {
 		return nil, errors.Errorf("jwt verify failed")
 	}
-	buffer := make([]byte, 8)
+	buffer := make([]byte, CookieLen)
 	cipher, _ := rc4.NewCipher(encKey)
-	cipher.XORKeyStream(buffer, stream[9:])
+	cipher.XORKeyStream(buffer, stream[MACLen+IVLen:])
 
 	session := PHPSessionId{0, 0}
 	for i := 0; i < 4; i++ {
