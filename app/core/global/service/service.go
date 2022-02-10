@@ -1,6 +1,8 @@
-package global
+package service
 
 import (
+	"app/core/global/config"
+	"app/core/global/logger"
 	middleware2 "app/core/system/middleware"
 	"app/core/utility/common"
 	"fmt"
@@ -17,15 +19,17 @@ var (
 	_serviceOnce     sync.Once
 )
 
-func serviceInstance() *Service {
+func Instance() *Service {
 	_serviceOnce.Do(func() {
-		gConfig := configInstance()
-		oLog := loggersInstance().OutputLogger
+		gConfig := config.Instance()
+		oLog := logger.Instance().OutputLogger
+		aLog := logger.Instance().AccessLogger
 
 		if gConfig.Dev.Debug {
 			oLog.Info("gin-server uses DebugMode.")
 			gin.SetMode(gin.DebugMode)
 		} else {
+			common.OutPrintf("gin-server uses ReleaseMode.\n")
 			oLog.Info("gin-server uses ReleaseMode.")
 			gin.SetMode(gin.ReleaseMode)
 		}
@@ -33,7 +37,7 @@ func serviceInstance() *Service {
 
 		instance := Service{}
 		instance.GinEngine = gin.New()
-		instance.GinEngine.Use(middleware2.GinRecovery(loggersInstance().AccessLogger, true)).Use(middleware2.GinLogger(loggersInstance().AccessLogger))
+		instance.GinEngine.Use(middleware2.GinRecovery(aLog, true)).Use(middleware2.GinLogger(aLog))
 		//instance.Start()
 		_serviceInstance = &instance
 	})
@@ -56,7 +60,7 @@ func (ths Service) AddRoutes(addRouteFunctions ...func(engine *gin.Engine)) {
 }
 
 func AddStaticRoute(engine *gin.Engine) {
-	loggers := loggersInstance()
+	loggers := logger.Instance()
 
 	if gin.Mode() == gin.DebugMode {
 		engine.StaticFS("/", http.Dir("../web/dist"))
@@ -73,8 +77,8 @@ func AddStaticRoute(engine *gin.Engine) {
 }
 
 func (ths Service) Start() {
-	oLog := loggersInstance().OutputLogger
-	gConfig := configInstance()
+	oLog := logger.Instance().OutputLogger
+	gConfig := config.Instance()
 
 	startMsg := fmt.Sprintf("gin-server is going to start on [%s] ...",
 		gConfig.Service.GetServiceAddress())

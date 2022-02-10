@@ -1,6 +1,7 @@
-package global
+package logger
 
 import (
+	config2 "app/core/global/config"
 	"app/core/system/config"
 	"app/core/utility/common"
 	"app/core/utility/errno"
@@ -44,9 +45,9 @@ var (
 	_loggersOnce     sync.Once
 )
 
-func loggersInstance() *Loggers {
+func Instance() *Loggers {
 	_loggersOnce.Do(func() {
-		cfgInst := configInstance()
+		cfgInst := config2.Instance()
 		if nil == cfgInst {
 			log.SetOutput(os.Stderr)
 			log.Fatalln("require config information.")

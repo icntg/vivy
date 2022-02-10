@@ -1,6 +1,7 @@
-package global
+package config
 
 import (
+	"app/core/global/args"
 	"app/core/system/config"
 	"app/core/utility/common"
 	"app/core/utility/errno"
@@ -17,9 +18,9 @@ var (
 	_configOnce     sync.Once
 )
 
-func configInstance() *config.Config {
+func Instance() *config.Config {
 	_configOnce.Do(func() {
-		systemArgs := systemArgsInstance()
+		systemArgs := args.Instance()
 		if nil == systemArgs {
 			common.ErrPrintf("require system args.\n")
 			os.Exit(errno.ErrorSystemArgs)
@@ -38,7 +39,7 @@ func configInstance() *config.Config {
 }
 
 func ReadFromYamlFile(filename string) config.Config {
-	systemArgs := systemArgsInstance()
+	systemArgs := args.Instance()
 
 	if !common.FileExists(filename) {
 		common.ErrPrintf("config file [%s] does not exist.\n", filename)

@@ -1,6 +1,8 @@
-package global
+package database
 
 import (
+	"app/core/global/config"
+	"app/core/global/logger"
 	"app/core/utility/common"
 	"app/core/utility/errno"
 	"encoding/json"
@@ -15,16 +17,18 @@ var (
 	_gormOnce     sync.Once
 )
 
-func gormInstance() *gorm.DB {
+func Instance() *gorm.DB {
 	_gormOnce.Do(func() {
 		var (
-			err error
+			err  error
+			gCfg = config.Instance()
 		)
-		dsn := configInstance().DataSource.MySQL.GetDSN()
-		dsnMask := configInstance().DataSource.MySQL.GetDSNWithMask()
+		dsn := gCfg.DataSource.MySQL.GetDSN()
+		dsnMask := gCfg.DataSource.MySQL.GetMaskedDSN()
 		_gormInstance, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-			PrepareStmt: true,
-			Logger:      *loggersInstance().GORMLogger,
+			PrepareStmt:                              true,
+			Logger:                                   *logger.Instance().GORMLogger,
+			DisableForeignKeyConstraintWhenMigrating: true,
 		})
 		if nil != err {
 			common.ErrPrintf("gorm cannot open with [%s]: %v\n", dsnMask, err)
@@ -34,13 +38,15 @@ func gormInstance() *gorm.DB {
 		sqlDB, err := _gormInstance.DB()
 		if nil != err {
 			common.ErrPrintf("_gormInstance cannot call DB: %v\n", err)
+			common.ErrPrintf("gorm cannot connect database. maybe you should use --init to initialize database?\n")
 			os.Exit(errno.ErrorConnectDatabase)
 		}
-		sqlDB.SetMaxOpenConns(configInstance().DataSource.MySQL.MaxOpen)
-		sqlDB.SetMaxIdleConns(configInstance().DataSource.MySQL.MaxIdle)
+		sqlDB.SetMaxOpenConns(gCfg.DataSource.MySQL.MaxOpen)
+		sqlDB.SetMaxIdleConns(gCfg.DataSource.MySQL.MaxIdle)
 		stats, err := json.Marshal(sqlDB.Stats())
 		if nil != err {
 			common.ErrPrintf("sqlDB cannot call Stats: %v\n", err)
+			common.ErrPrintf("gorm cannot connect database. maybe you should use --init to initialize database?\n")
 			os.Exit(errno.ErrorConnectDatabase)
 		}
 		common.OutPrintf("gorm open with [%s]: %s\n", dsnMask, string(stats))

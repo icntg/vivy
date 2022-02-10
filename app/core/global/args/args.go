@@ -1,4 +1,4 @@
-package global
+package args
 
 import (
 	flag "github.com/spf13/pflag"
@@ -17,8 +17,8 @@ var (
 	_systemArgsOnce     sync.Once
 )
 
-// systemArgsInstance /* 命令行参数处理 */
-func systemArgsInstance() *SystemArgs {
+// Instance /* 命令行参数处理 */
+func Instance() *SystemArgs {
 	_systemArgsOnce.Do(func() {
 		flagArgConfig := flag.StringP("config", "c", "config.yaml", "Using a custom config file")
 		// 输出模板

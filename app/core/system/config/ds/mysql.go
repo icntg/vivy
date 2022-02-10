@@ -35,7 +35,7 @@ func (m *MySQL) GetDSN() string {
 	return ret
 }
 
-func (m *MySQL) GetDSNWithMask() string {
+func (m *MySQL) GetMaskedDSN() string {
 	var ret string
 	ret = fmt.Sprintf("mysql://%s:%s@tcp(%s:%d)/%s",
 		url.QueryEscape(m.Username),
@@ -43,6 +43,34 @@ func (m *MySQL) GetDSNWithMask() string {
 		m.Host,
 		m.Port,
 		m.Database,
+	)
+	if len(m.Option) > 0 {
+		ret += "?" + m.Option
+	}
+	return ret
+}
+
+func (m *MySQL) GetDSNWithOutDatabase() string {
+	var ret string
+	ret = fmt.Sprintf("%s:%s@tcp(%s:%d)/",
+		url.QueryEscape(m.Username),
+		url.QueryEscape(m.Password),
+		m.Host,
+		m.Port,
+	)
+	if len(m.Option) > 0 {
+		ret += "?" + m.Option
+	}
+	return ret
+}
+
+func (m *MySQL) GetMaskedDSNWithOutDatabase() string {
+	var ret string
+	ret = fmt.Sprintf("mysql://%s:%s@tcp(%s:%d)/",
+		url.QueryEscape(m.Username),
+		"**********",
+		m.Host,
+		m.Port,
 	)
 	if len(m.Option) > 0 {
 		ret += "?" + m.Option

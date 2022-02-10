@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/core/global"
+	"app/core/global/service"
 	"app/core/system/initialize"
 	"app/core/utility/common"
 	"os"
@@ -28,9 +29,9 @@ func main() {
 
 	}
 	// 启动服务
-	service := global.GetGinService()
-	service.AddRoutes(
-		global.AddStaticRoute,
+	httpService := global.GetGinService()
+	httpService.AddRoutes(
+		service.AddStaticRoute,
 	)
-	service.Start()
+	httpService.Start()
 }
