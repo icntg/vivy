@@ -113,7 +113,8 @@ func initLoggers(cfgInst *config.Config) Loggers {
 	// dataLogger
 	{
 		tmpLog := logger.New(
-			log.New(outputWriter, "\n", log.LstdFlags), // io writer（日志输出的目标，前缀和日志包含的内容——译者注）
+			// 注意，这里使用了前面outputLogger的输出流，即将GORM数据库日志输出到output类别的日志里。
+			log.New(outputWriter, "", log.LstdFlags), // io writer（日志输出的目标，前缀和日志包含的内容）
 			logger.Config{
 				SlowThreshold:             time.Second,   // 慢 SQL 阈值
 				LogLevel:                  logger.Silent, // 日志级别
@@ -122,7 +123,6 @@ func initLoggers(cfgInst *config.Config) Loggers {
 			},
 		)
 		loggers.GormLogger = &tmpLog
-		//loggers.DataLogger = log.New(io.MultiWriter(os.Stderr, ))
 	}
 	return loggers
 }
