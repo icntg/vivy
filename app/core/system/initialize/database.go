@@ -5,7 +5,10 @@ import (
 	"app/core/utility/common"
 	"app/core/utility/errno"
 	"database/sql"
+	"fmt"
+	"gorm.io/driver/mysql"
 	_ "gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"os"
 )
 
@@ -25,7 +28,24 @@ func InitDatabase() {
 		os.Exit(errno.ErrorConnectDatabase)
 	}
 	common.OutPrintf("conn = %v\n", conn)
-	r, err := conn.Exec("CREATE DATABASE `vivy` /*!40100 COLLATE 'utf8mb4_general_ci' */")
-	common.OutPrintf("r = %v\n", r)
-	common.ErrPrintf("err = %v\n", err)
+	_sql := fmt.Sprintf("CREATE DATABASE `%s` /*!40100 COLLATE 'utf8mb4_general_ci' */", gCfg.DataSource.MySQL.Database)
+	r, err := conn.Exec(_sql)
+	if nil != err {
+		common.ErrPrintf("sql cannot create database [%s] with [%s]: %v\n", gCfg.DataSource.MySQL.Database, _sql, err)
+	} else {
+		common.OutPrintf("sql created database [%s] successfully: %v\n", gCfg.DataSource.MySQL.Database, r)
+	}
+	_sql = fmt.Sprintf("USE `%s`", gCfg.DataSource.MySQL.Database)
+	r, err = conn.Exec(_sql)
+	if nil != err {
+		common.ErrPrintf("sql cannot use database [%s] with [%s]: %v\n", gCfg.DataSource.MySQL.Database, _sql, err)
+		os.Exit(errno.ErrorConnectDatabase)
+	} else {
+		common.OutPrintf("sql use database [%s] successfully: %v\n", gCfg.DataSource.MySQL.Database, r)
+	}
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn: conn,
+	}), &gorm.Config{})
+	gormDB.AutoMigrate()
 }
