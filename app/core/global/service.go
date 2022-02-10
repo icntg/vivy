@@ -20,7 +20,7 @@ var (
 func serviceInstance() *Service {
 	_serviceOnce.Do(func() {
 		gConfig := configInstance()
-		oLog := loggersInstance().OutPutLogger
+		oLog := loggersInstance().OutputLogger
 
 		if gConfig.Dev.Debug {
 			oLog.Info("gin-server uses DebugMode.")
@@ -63,7 +63,7 @@ func AddStaticRoute(engine *gin.Engine) {
 	} else {
 		binaryPath, err := common.GetBinaryPath()
 		if nil != err {
-			loggers.OutPutLogger.Error("cannot GetBinaryPath")
+			loggers.OutputLogger.Error("cannot GetBinaryPath")
 			engine.StaticFS("/", http.Dir("./static"))
 		} else {
 			engine.StaticFS("/", http.Dir(filepath.Join(binaryPath, "static")))
@@ -73,7 +73,7 @@ func AddStaticRoute(engine *gin.Engine) {
 }
 
 func (ths Service) Start() {
-	oLog := loggersInstance().OutPutLogger
+	oLog := loggersInstance().OutputLogger
 	gConfig := configInstance()
 
 	startMsg := fmt.Sprintf("gin-server is going to start on [%s] ...",

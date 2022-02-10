@@ -7,7 +7,7 @@ import (
 var (
 //mEngine *xorm.Engine
 //gCfg    = global.ConfigInstance()
-//oLog    = global.LoggersInstance().OutPutLogger
+//oLog    = global.LoggersInstance().OutputLogger
 )
 
 func init() {

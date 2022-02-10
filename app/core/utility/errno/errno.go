@@ -6,4 +6,5 @@ const (
 	ErrorReadConfig             = 0x1002
 	ErrorInitLogger             = 0x1003
 	ErrorStartGinService        = 0x1010
+	ErrorConnectDatabase        = 0x1020
 )

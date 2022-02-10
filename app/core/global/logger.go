@@ -3,6 +3,7 @@ package global
 import (
 	"app/core/system/config"
 	"app/core/utility/common"
+	"app/core/utility/errno"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,10 +33,10 @@ var (
 )
 
 type Loggers struct {
-	OutPutLogger *zap.SugaredLogger
+	OutputLogger *zap.SugaredLogger
 	AccessLogger *zap.Logger
 	SecureLogger *zap.SugaredLogger
-	GormLogger   *logger.Interface
+	GORMLogger   *logger.Interface
 }
 
 var (
@@ -65,8 +66,8 @@ func initLoggers(cfgInst *config.Config) Loggers {
 	if !common.FileExists(logDir) {
 		err := os.MkdirAll(logDir, 0o755)
 		if nil != err {
-			log.SetOutput(os.Stderr)
-			log.Fatalf("cannot create Log Directory [%s]: %v\n", logDir, err)
+			common.ErrPrintf("cannot create Log Directory [%s]: %v\n", logDir, err)
+			os.Exit(errno.ErrorInitLogger)
 		}
 	}
 	encoder := initEncoder()
@@ -75,7 +76,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 	// accessLogger
 	{
 		logPath := path.Join(logDir, accessFilename)
-		logWriter = getWriter(logPath, 6*31, 7)
+		logWriter := getWriter(logPath, 6*31, 7)
 		if cfgInst.Dev.Debug {
 			logWriter = io.MultiWriter(logWriter, os.Stderr)
 		}
@@ -95,7 +96,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 			zapcore.NewCore(encoder, zapcore.AddSync(outputWriter), logLevel[cfgInst.Zap.Level]),
 		)
 		tmpLog := zap.New(core, zap.AddCaller())
-		loggers.OutPutLogger = tmpLog.Sugar()
+		loggers.OutputLogger = tmpLog.Sugar()
 	}
 	// secureLogger
 	{
@@ -122,7 +123,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 				Colorful:                  false,         // 禁用彩色打印
 			},
 		)
-		loggers.GormLogger = &tmpLog
+		loggers.GORMLogger = &tmpLog
 	}
 	return loggers
 }

@@ -20,12 +20,12 @@ data-source:
     log-zap: true
     max-idle: 20
     max-open: 100
-    option: parseTime=true&charset=utf8&loc=Local
-    password: <password>
+    option: parseTime=true&charset=utf8mb4&loc=Local
+    password: root
     port: 3306
     show-exec-time: false
     show-sql: false
-    username: <username>
+    username: root
   redis:
     addr: localhost:6379
     db: 0

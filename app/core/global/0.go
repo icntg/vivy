@@ -17,7 +17,7 @@ var (
 	GetSysArgs    func() *SystemArgs
 	GetConfig     func() *config.Config
 	GetLoggers    func() *Loggers
-	GetGorm       func() *gorm.DB
+	GetGORM       func() *gorm.DB
 	GetGinService func() *Service
 )
 
@@ -26,7 +26,7 @@ func init() {
 		GetSysArgs = systemArgsInstance
 		GetConfig = configInstance
 		GetLoggers = loggersInstance
-		GetGorm = gormInstance
+		GetGORM = gormInstance
 		GetGinService = serviceInstance
 	}
 
