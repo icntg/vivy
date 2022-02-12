@@ -45,19 +45,19 @@ func (t *RcMenu) TableName() string {
 }
 
 type RcMenuMeta struct {
-	KeepAlive   bool   `json:"keepAlive" gorm:"comment:'是否缓存'"`           // 是否缓存
-	DefaultMenu bool   `json:"defaultMenu" gorm:"comment:'是否是基础路由（开发中）'"` // 是否是基础路由（开发中）
-	Title       string `json:"title" gorm:"comment:'菜单名'"`                // 菜单名
-	Icon        string `json:"icon" gorm:"comment:'菜单图标'"`                // 菜单图标
-	CloseTab    bool   `json:"closeTab" gorm:"comment:'自动关闭tab'"`         // 自动关闭tab
+	KeepAlive   bool   `json:"keepAlive" gorm:"comment:是否缓存"`           // 是否缓存
+	DefaultMenu bool   `json:"defaultMenu" gorm:"comment:是否是基础路由（开发中）"` // 是否是基础路由（开发中）
+	Title       string `json:"title" gorm:"comment:菜单名"`                // 菜单名
+	Icon        string `json:"icon" gorm:"comment:菜单图标"`                // 菜单图标
+	CloseTab    bool   `json:"closeTab" gorm:"comment:自动关闭tab"`         // 自动关闭tab
 }
 
 type RcMenuParameter struct {
 	entity.Entity
 	SysBaseMenuID uint
-	Type          string `json:"type" gorm:"comment:'地址栏携带参数为params还是query'"` // 地址栏携带参数为params还是query
-	Key           string `json:"key" gorm:"comment:'地址栏携带参数的key'"`            // 地址栏携带参数的key
-	Value         string `json:"value" gorm:"comment:'地址栏携带参数的值'"`            // 地址栏携带参数的值
+	Type          string `json:"type" gorm:"comment:地址栏携带参数为params还是query"` // 地址栏携带参数为params还是query
+	Key           string `json:"key" gorm:"comment:地址栏携带参数的key"`            // 地址栏携带参数的key
+	Value         string `json:"value" gorm:"comment:地址栏携带参数的值"`            // 地址栏携带参数的值
 }
 
 func (t *RcMenuParameter) TableName() string {

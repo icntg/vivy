@@ -48,7 +48,7 @@ type Service struct {
 	GinEngine *gin.Engine
 }
 
-type ServiceInterface interface {
+type IService interface {
 	Start()
 	AddRoutes(addRouteFunctions ...func(routes *gin.IRoutes))
 }

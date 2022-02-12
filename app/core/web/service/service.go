@@ -1,14 +1,14 @@
 package service
 
-type UserService interface {
+type IUserService interface {
 	GetUserDetail()
 	ModifyUser()
 	ChangePassword()
 	NewGoogleToken()
 }
 
-type UserAdminService interface {
-	UserService
+type IUserAdminService interface {
+	IUserService
 	GetUserList()
 	CreateUser()
 	RemoveUser()
@@ -16,7 +16,7 @@ type UserAdminService interface {
 	EnableUser()
 }
 
-type RoleAdminService interface {
+type IRoleAdminService interface {
 	GetRoleList()
 	GetRoleDetail()
 	CreateRole()
@@ -24,14 +24,14 @@ type RoleAdminService interface {
 	RemoveRole()
 }
 
-type UserRoleAdminService interface {
+type IUserRoleAdminService interface {
 	GetRolesByUser()
 	GetUsersByRole()
 	ModifyRolesByUser()
 	ModifyUsersByRole()
 }
 
-type DepartmentService interface {
+type IDepartmentService interface {
 	GetDepartmentList()
 	GetDepartmentDetail()
 	CreateDepartment()

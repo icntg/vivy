@@ -6,7 +6,7 @@ var (
 	_rwLock sync.RWMutex
 )
 
-type CacheInterface interface {
+type ICache interface {
 	SyncWithDatabase() // 从数据库中刷入Cache
 	IsAccessible(userDbId uint32, method, url string) bool
 }

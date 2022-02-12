@@ -6,6 +6,8 @@
 package common
 
 import (
+	"app/core/utility/basex/base32"
+	"app/core/utility/identity"
 	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
@@ -488,4 +490,9 @@ func ErrPrintf(format string, a ...interface{}) {
 		)
 	}
 	_ = os.Stderr.Sync()
+}
+
+func ObjectIdB32x() string {
+	id := identity.ObjectId()
+	return base32.EncodeId(id[:])
 }
