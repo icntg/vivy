@@ -6,7 +6,7 @@
 package common
 
 import (
-	"app/core/utility/basex/base32"
+	"app/core/utility/basex/base32x"
 	"app/core/utility/identity"
 	"bytes"
 	"crypto/md5"
@@ -494,5 +494,18 @@ func ErrPrintf(format string, a ...interface{}) {
 
 func ObjectIdB32x() string {
 	id := identity.ObjectId()
-	return base32.EncodeId(id[:])
+	return base32x.EncodeId(id[:])
+}
+
+func EndlessFunc(f func() bool) {
+	for {
+		if f() {
+			return
+		}
+	}
+}
+
+func IsAlphaDigitsBaseline(in string) bool {
+	re, _ := regexp.Compile(`[A-Za-z0-9_]{4,20}`)
+	return re.MatchString(in)
 }

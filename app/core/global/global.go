@@ -17,6 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	ProductName = "VIVY"
+)
+
 var (
 	constTest     = false
 	GetSysArgs    func() *args.SystemArgs

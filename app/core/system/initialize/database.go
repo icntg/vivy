@@ -5,9 +5,11 @@ import (
 	"app/core/utility/common"
 	"app/core/utility/crypto"
 	"app/core/utility/errno"
+	"app/core/utility/terminal/qrcode"
 	"app/core/web/model/system"
 	"bufio"
 	"database/sql"
+	"encoding/base32"
 	"encoding/hex"
 	"fmt"
 	"gorm.io/driver/mysql"
@@ -80,30 +82,94 @@ func InitDatabase() {
 		err = gormDB.AutoMigrate(system.User{})
 		err = gormDB.AutoMigrate(system.UserRole{})
 	}
+
+	admin := initAdmin()
+	r := gormDB.Create(&admin)
+	err = r.Error
 	return
 }
 
-func initAdmin(db *gorm.DB) {
+func initAdmin() system.User {
 	admin := system.User{}
 	admin.Service.Id = common.ObjectIdB32x()
+	admin.Code = "P00000000"
+	admin.Name = "系统管理员"
+	admin.EMail = fmt.Sprintf("admin@%s.com", strings.ToLower(global.ProductName))
 
 	input := bufio.NewScanner(os.Stdin)
 
-	common.OutPrintf("===== CREATE ADMIN =====\n")
-	common.OutPrintf("Please input the username of admin(default: 'admin'): ")
-	input.Scan()
-	adminName := strings.TrimSpace(input.Text())
-	if len(adminName) == 0 {
-		adminName = "admin"
-	}
-	passcode := crypto.Rand(10, true)
-	password := hex.EncodeToString(passcode)
-	common.OutPrintf("Initial password of [%s] is: %s\n", adminName, password)
-	common.OutPrintf("Do you want to use Google Token? (Y/n): ")
-	input.Scan()
-	answer := strings.TrimSpace(input.Text())
-	if answer != "n" && answer != "N" {
-		token := crypto.Rand(10, true)
+	common.OutPrintf("===== CREATE ADMIN Begin =====\n")
 
+	common.EndlessFunc(func() bool {
+		common.OutPrintf("Please input the username of admin(default: 'admin', char must in `[A-Za-z0-9_]{4,20}`): ")
+		input.Scan()
+		adminName := strings.TrimSpace(input.Text())
+		if len(adminName) == 0 {
+			admin.LoginName = "admin"
+			return true
+		} else if common.IsAlphaDigitsBaseline(adminName) {
+			admin.LoginName = adminName
+			return true
+		}
+		common.ErrPrintf("ERROR: username is too short or contains illegal characters.")
+		return false
+	})
+	common.OutPrintf("To use username: [%s]\n", admin.LoginName)
+
+	common.EndlessFunc(func() bool {
+		common.OutPrintf("Do you want to use Google Token? (Y/n): ")
+		input.Scan()
+		answer := strings.ToLower(strings.TrimSpace(input.Text()))
+		if answer == "n" {
+			return true
+		}
+
+		token := crypto.Rand(15, true)
+		b32loToken := strings.ToLower(base32.StdEncoding.EncodeToString(token))
+		otp := common.Format(`otpauth://totp/{{.issuer}}:{{.account}}?algorithm=SHA1&digits=6&period=30&issuer={{.issuer}}&secret={{.secret}}`).Exec(map[string]interface{}{
+			"issuer":  global.ProductName,
+			"account": admin.LoginName,
+			"secret":  b32loToken,
+		})
+		qrCodes := qrcode.ConsoleQRCode(otp)
+		common.OutPrintf("Now several QRCode(s) will be draw on terminal. You can choose one which can be recognized by Google Authenticator.\n")
+		mode := ""
+		for _, qr := range qrCodes {
+			common.EndlessFunc(func() bool {
+				common.OutPrintf(qr)
+				common.OutPrintf("\nIs this one ok? Y(es) / N(o) / T(ext)): ")
+				input.Scan()
+				mode = strings.ToLower(strings.TrimSpace(input.Text()))
+				if mode == "y" || mode == "n" || mode == "t" {
+					return true
+				}
+				return false
+			})
+			if mode == "y" || mode == "t" {
+				break
+			}
+		}
+		if mode != "y" {
+			buffer := strings.Builder{}
+			for i := 0; i < len(b32loToken); i++ {
+				buffer.WriteByte(b32loToken[i])
+				if (i+1)%4 == 0 {
+					buffer.WriteString(" ")
+				}
+			}
+			outB32loToken := strings.TrimSpace(buffer.String())
+			common.OutPrintf("Google Token in TextMode: [%s]\n", outB32loToken)
+		}
+		admin.Token = b32loToken
+		return true
+	})
+
+	{
+		clearPassword := hex.EncodeToString(crypto.Rand(10, true))
+		admin.Salt = strings.ToLower(base32.StdEncoding.EncodeToString(crypto.Rand(10, true)))
+		admin.Password, _ = crypto.EncPassword(clearPassword, admin.Salt)
+		common.OutPrintf("Initial password of [%s] is: [%s]\n", admin.LoginName, clearPassword)
 	}
+	common.OutPrintf("===== CREATE ADMIN End =====\n")
+	return admin
 }

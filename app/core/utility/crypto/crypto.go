@@ -3,9 +3,13 @@ package crypto
 import (
 	"crypto/hmac"
 	cryptoRand "crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	"hash"
 	"math/rand"
+	"strings"
 )
 
 type Block struct {
@@ -77,4 +81,51 @@ func Rand(n int, trySafe bool) []byte {
 		buffer[j+3] = byte(a & 0xff)
 	}
 	return buffer
+}
+
+const PasswordLength = 50
+
+func EncPassword(clearPassword string, b32lowerSalt string) (string, error) {
+	salt, err := base32.StdEncoding.DecodeString(strings.ToUpper(b32lowerSalt))
+	if nil != err {
+		return "", errors.Wrap(err, "salt decode failed")
+	}
+	pb := []byte(clearPassword)
+	h := hmac.New(sha256.New, salt)
+	h.Write(pb)
+	ep := h.Sum(nil)
+	ret := strings.ToLower(base32.StdEncoding.EncodeToString(ep)[:PasswordLength])
+	return ret, nil
+}
+
+func ComparePassword(clearPassword, storedPassword, b32lowerSalt string) bool {
+	expect, err := EncPassword(clearPassword, b32lowerSalt)
+	if nil != err {
+		// 随机生成。此处大写是为了确保比较失败。
+		expect = strings.ToUpper(hex.EncodeToString(Rand(PasswordLength/2, true)))
+	}
+	fullFill := func(in string) [PasswordLength]byte {
+		buffer := [PasswordLength]byte{}
+		bin := []byte(in)
+		if len(bin) < PasswordLength {
+			n := PasswordLength - len(bin)
+			rb := Rand(n, true)
+			copy(buffer[:], bin)
+			copy(buffer[len(bin):], rb)
+		} else if len(bin) > PasswordLength {
+			copy(buffer[:], bin[:PasswordLength])
+		} else {
+			copy(buffer[:], bin)
+		}
+		return buffer
+	}
+	a := fullFill(expect)
+	b := fullFill(storedPassword)
+	ret := true
+	for i := 0; i < PasswordLength; i++ {
+		if a[i] != b[i] {
+			ret = false
+		}
+	}
+	return ret
 }
