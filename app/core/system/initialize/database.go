@@ -86,7 +86,6 @@ func InitDatabase() {
 	admin := initAdmin()
 	r := gormDB.Create(&admin)
 	err = r.Error
-	return
 }
 
 func initAdmin() system.User {
@@ -166,8 +165,7 @@ func initAdmin() system.User {
 
 	{
 		clearPassword := hex.EncodeToString(crypto.Rand(10, true))
-		admin.Salt = strings.ToLower(base32.StdEncoding.EncodeToString(crypto.Rand(10, true)))
-		admin.Password, _ = crypto.EncPassword(clearPassword, admin.Salt)
+		admin.Password, admin.Salt = crypto.EncPasswordInit(clearPassword)
 		common.OutPrintf("Initial password of [%s] is: [%s]\n", admin.LoginName, clearPassword)
 	}
 	common.OutPrintf("===== CREATE ADMIN End =====\n")

@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"app/core/utility/basex/base32x"
 	"crypto/hmac"
 	cryptoRand "crypto/rand"
 	"crypto/sha256"
@@ -83,9 +84,10 @@ func Rand(n int, trySafe bool) []byte {
 	return buffer
 }
 
-const PasswordLength = 50
+const PasswordHashLength = 32
 
 func EncPassword(clearPassword string, b32lowerSalt string) (string, error) {
+	// 使用标准的base32，便于其他程序兼容
 	salt, err := base32.StdEncoding.DecodeString(strings.ToUpper(b32lowerSalt))
 	if nil != err {
 		return "", errors.Wrap(err, "salt decode failed")
@@ -94,26 +96,38 @@ func EncPassword(clearPassword string, b32lowerSalt string) (string, error) {
 	h := hmac.New(sha256.New, salt)
 	h.Write(pb)
 	ep := h.Sum(nil)
-	ret := strings.ToLower(base32.StdEncoding.EncodeToString(ep)[:PasswordLength])
+	ret := strings.ToLower(base32x.Encode(ep, true)[:PasswordHashLength])
 	return ret, nil
+}
+
+func EncPasswordInit(clearPassword string) (string, string) {
+	salt := Rand(20, true)
+	pb := []byte(clearPassword)
+	h := hmac.New(sha256.New, salt)
+	h.Write(pb)
+	ep := h.Sum(nil)
+	ret := strings.ToLower(base32x.Encode(ep, true)[:PasswordHashLength])
+	return ret, strings.ToLower(base32.StdEncoding.EncodeToString(salt))
 }
 
 func ComparePassword(clearPassword, storedPassword, b32lowerSalt string) bool {
 	expect, err := EncPassword(clearPassword, b32lowerSalt)
 	if nil != err {
-		// 随机生成。此处大写是为了确保比较失败。
-		expect = strings.ToUpper(hex.EncodeToString(Rand(PasswordLength/2, true)))
+		// 随机生成。此处特殊符号。
+		const x = "`~!@#$%^&*()_-=+\\|[]{},./<>?"
+		expect = strings.ToUpper(hex.EncodeToString(Rand(PasswordHashLength/2, true)))
+		expect = expect[:len(x)] + x
 	}
-	fullFill := func(in string) [PasswordLength]byte {
-		buffer := [PasswordLength]byte{}
+	fullFill := func(in string) [PasswordHashLength]byte {
+		buffer := [PasswordHashLength]byte{}
 		bin := []byte(in)
-		if len(bin) < PasswordLength {
-			n := PasswordLength - len(bin)
+		if len(bin) < PasswordHashLength {
+			n := PasswordHashLength - len(bin)
 			rb := Rand(n, true)
 			copy(buffer[:], bin)
 			copy(buffer[len(bin):], rb)
-		} else if len(bin) > PasswordLength {
-			copy(buffer[:], bin[:PasswordLength])
+		} else if len(bin) > PasswordHashLength {
+			copy(buffer[:], bin[:PasswordHashLength])
 		} else {
 			copy(buffer[:], bin)
 		}
@@ -122,10 +136,8 @@ func ComparePassword(clearPassword, storedPassword, b32lowerSalt string) bool {
 	a := fullFill(expect)
 	b := fullFill(storedPassword)
 	ret := true
-	for i := 0; i < PasswordLength; i++ {
-		if a[i] != b[i] {
-			ret = false
-		}
+	for i := 0; i < PasswordHashLength; i++ {
+		ret = ret && a[i] == b[i]
 	}
 	return ret
 }
