@@ -8,6 +8,6 @@ type UserRole struct {
 	RoleId string `json:"role_id" gorm:"type:CHAR(20);not null;comment:角色ID"`
 }
 
-func (t *UserRole) TableName() string {
+func (t UserRole) TableName() string {
 	return "sys_user_role"
 }

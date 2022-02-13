@@ -9,6 +9,6 @@ type Role struct {
 	Level    int32  `json:"level" gorm:"type:INT;not null;comment:角色级别"`
 }
 
-func (t *Role) TableName() string {
+func (t Role) TableName() string {
 	return "sys_role"
 }

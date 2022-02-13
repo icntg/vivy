@@ -22,8 +22,8 @@ func Instance() *config.Config {
 	_configOnce.Do(func() {
 		systemArgs := args.Instance()
 		if nil == systemArgs {
-			common.ErrPrintf("require system args.\n")
-			os.Exit(errno.ErrorSystemArgs)
+			errno.ErrorSystemArgsIsNil.Exit()
+			// 但是上面应该不可能遇到。除非手贱。
 		}
 		if systemArgs.ConfigTemplate != nil && len(*systemArgs.ConfigTemplate) > 0 {
 			// 输出配置模板
@@ -44,7 +44,7 @@ func ReadFromYamlFile(filename string) config.Config {
 	if !common.FileExists(filename) {
 		common.ErrPrintf("config file [%s] does not exist.\n", filename)
 		common.OutPrintf(systemArgs.FlagUsage)
-		os.Exit(errno.ErrorReadConfig)
+		os.Exit(errno.ErrorConfigNotExist.Code())
 	}
 	v := viper.New()
 	v.SetConfigFile(filename)

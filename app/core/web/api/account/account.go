@@ -13,3 +13,7 @@ func LoginByGoogleToken(c *gin.Context) {
 func Logout(c *gin.Context) {
 
 }
+
+func Register(c *gin.Context) {
+	
+}

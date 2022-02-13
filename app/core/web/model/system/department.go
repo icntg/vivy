@@ -7,3 +7,7 @@ type Department struct {
 	Name     string `json:"name" gorm:"type:VARCHAR(100);not null;comment:部门/班组名称"`
 	ParentId string `json:"parent_id" gorm:"type:CHAR(20);comment:上级部门ID"`
 }
+
+func (d Department) TableName() string {
+	return "sys_department"
+}

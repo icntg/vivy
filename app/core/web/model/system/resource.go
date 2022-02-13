@@ -21,7 +21,7 @@ type RcAPI struct {
 	Method      string `json:"method" gorm:"default:POST;comment:方法"` // 方法:创建POST(默认)|查看GET|更新PUT|删除DELETE
 }
 
-func (t *RcAPI) TableName() string {
+func (t RcAPI) TableName() string {
 	return "sys_resource_api"
 }
 
@@ -40,7 +40,7 @@ type RcMenu struct {
 	Parameters []RcMenuParameter                 `json:"parameters"`
 }
 
-func (t *RcMenu) TableName() string {
+func (t RcMenu) TableName() string {
 	return "sys_resource_menu"
 }
 
@@ -60,6 +60,6 @@ type RcMenuParameter struct {
 	Value         string `json:"value" gorm:"comment:地址栏携带参数的值"`            // 地址栏携带参数的值
 }
 
-func (t *RcMenuParameter) TableName() string {
+func (t RcMenuParameter) TableName() string {
 	return "sys_resource_menu_parameter"
 }

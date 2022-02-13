@@ -15,6 +15,7 @@ import (
 	"gorm.io/driver/mysql"
 	_ "gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"os"
 	"strings"
 )
@@ -75,17 +76,26 @@ func InitDatabase() {
 
 	// create tables
 	{
-		err = gormDB.AutoMigrate(system.Department{})
-		err = gormDB.AutoMigrate(system.Resource{})
-		err = gormDB.AutoMigrate(system.Role{})
-		err = gormDB.AutoMigrate(system.RoleResource{})
-		err = gormDB.AutoMigrate(system.User{})
-		err = gormDB.AutoMigrate(system.UserRole{})
+		createTableFunc := func(t schema.Tabler) {
+			err = gormDB.AutoMigrate(t)
+			if nil != err {
+				common.ErrPrintf("gorm cannot create table [%s]: %v\n", t.TableName(), err)
+			}
+		}
+		createTableFunc(system.Department{})
+		createTableFunc(system.RcAPI{})
+		createTableFunc(system.Role{})
+		createTableFunc(system.RoleResource{})
+		createTableFunc(system.User{})
+		createTableFunc(system.UserRole{})
 	}
 
 	admin := initAdmin()
 	r := gormDB.Create(&admin)
 	err = r.Error
+	if nil != err {
+		common.ErrPrintf("gorm cannot create admin [%v]: %v\n", admin, err)
+	}
 }
 
 func initAdmin() system.User {
