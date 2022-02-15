@@ -13,10 +13,12 @@ import (
 // 仅保持用户ID
 // Set-Cookie: PHPSESSID=1dhpndum9ltrtpk8hnrqp5o3is; path=/
 
-const CookieName = "PHPSESSID"
-const MACLen = 5
-const IVLen = 4
-const CookieLen = 8
+const (
+	CookieName = "PHPSESSID"
+	MACLen     = 5
+	IVLen      = 4
+	CookieLen  = 8
+)
 
 type PHPSessionId struct {
 	UserIntId uint32

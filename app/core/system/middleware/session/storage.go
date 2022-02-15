@@ -4,6 +4,7 @@ import (
 	"app/core/utility/crypto/aes128gcm"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -69,6 +70,15 @@ func (session *Session) decodeFromString(encSession string) error {
 	return nil
 }
 
-func (es *EncodedSession) Get(key string) interface{} {
+func GetSession(name string, ctx *gin.Context) (*Session, error) {
+	encSession := EncodedSession(ctx.Param(name))
+	if len(encSession) == 0 {
+		return nil, nil
+	}
+
+	return nil, nil
+}
+
+func SetSession(name string, session *Session, ctx *gin.Context) error {
 	return nil
 }

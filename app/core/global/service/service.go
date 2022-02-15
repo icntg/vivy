@@ -3,7 +3,8 @@ package service
 import (
 	"app/core/global/config"
 	"app/core/global/logger"
-	middleware2 "app/core/system/middleware"
+	logger2 "app/core/system/middleware/logger"
+	middleware2 "app/core/system/middleware/recovery"
 	"app/core/utility/common"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,7 @@ func Instance() *Service {
 
 		instance := Service{}
 		instance.GinEngine = gin.New()
-		instance.GinEngine.Use(middleware2.GinRecovery(aLog, true)).Use(middleware2.GinLogger(aLog))
+		instance.GinEngine.Use(middleware2.GinRecovery(aLog, true)).Use(logger2.GinLogger(aLog))
 		//instance.Start()
 		_serviceInstance = &instance
 	})

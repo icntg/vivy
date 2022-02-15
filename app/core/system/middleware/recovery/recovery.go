@@ -1,4 +1,4 @@
-package middleware
+package recovery
 
 import (
 	"github.com/gin-gonic/gin"
