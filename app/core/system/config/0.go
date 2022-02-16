@@ -40,6 +40,7 @@ func DefaultConfig() Config {
 			"./web",
 			true,
 			"<session-secret-in-HEX>",
+			nil,
 		},
 		Captcha: Captcha{
 			5,
@@ -66,7 +67,9 @@ func DefaultConfig() Config {
 				Password: "<password>",
 			},
 			Redis: ds.Redis{
-				Addr:     "localhost:6379",
+				MaxIdle:  10,
+				Protocol: "tcp",
+				Address:  "localhost:6379",
 				Password: "<password>",
 			},
 		},

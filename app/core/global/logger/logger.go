@@ -49,8 +49,7 @@ func Instance() *Loggers {
 	_loggersOnce.Do(func() {
 		cfgInst := config2.Instance()
 		if nil == cfgInst {
-			log.SetOutput(os.Stderr)
-			log.Fatalln("require config information.")
+			errno.ErrorConfigIsNil.Exit()
 		}
 		loggers := initLoggers(cfgInst)
 		_loggersInstance = &loggers
@@ -63,12 +62,12 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		logWriter    io.Writer
 		outputWriter io.Writer
 	)
-	logDir := path.Join(cfgInst.Zap.Director)
+	logDir := path.Join(cfgInst.Zap.Directory)
 	if !common.FileExists(logDir) {
 		err := os.MkdirAll(logDir, 0o755)
 		if nil != err {
 			common.ErrPrintf("cannot create Log Directory [%s]: %v\n", logDir, err)
-			os.Exit(errno.ErrorInitLogger)
+			os.Exit(errno.ErrorLoggerMakeDir.Code())
 		}
 	}
 	encoder := initEncoder()
@@ -112,7 +111,7 @@ func initLoggers(cfgInst *config.Config) Loggers {
 		tmpLog := zap.New(core, zap.AddCaller())
 		loggers.SecureLogger = tmpLog.Sugar()
 	}
-	// dataLogger
+	// dataLogger // TODO: 好像没有生效的样子。输出还是只有stdout
 	{
 		tmpLog := logger.New(
 			// 注意，这里使用了前面outputLogger的输出流，即将GORM数据库日志输出到output类别的日志里。
@@ -169,8 +168,8 @@ func getWriter(filenamePrefix string, maxAgeDays int, rotationTimeDays int) io.W
 		)
 	}
 	if err != nil {
-		log.SetOutput(os.Stderr)
-		log.Fatalf("cannot initialize SecureLogger: %v\n", err)
+		common.ErrPrintf("cannot initialize %s: %v\n", filenamePrefix, err)
+		os.Exit(errno.ErrorLoggerInit.Code())
 	}
 	return hook
 }

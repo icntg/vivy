@@ -6,7 +6,7 @@ import (
 	"app/core/utility/crypto"
 	"app/core/utility/errno"
 	"app/core/utility/terminal/qrcode"
-	"app/core/web/model/system"
+	"app/core/web/model/po"
 	"bufio"
 	"database/sql"
 	"encoding/base32"
@@ -33,7 +33,7 @@ func InitDatabase() {
 	}()
 	if nil != err {
 		common.ErrPrintf("sql cannot open database with [%s]: %v\n", gCfg.DataSource.MySQL.GetMaskedDSNWithOutDatabase(), err)
-		os.Exit(errno.ErrorConnectDatabase)
+		os.Exit(errno.ErrorSQLOpen.Code())
 	}
 	common.OutPrintf("conn = %v\n", conn)
 
@@ -54,7 +54,7 @@ func InitDatabase() {
 		r, err := conn.Exec(_sql)
 		if nil != err {
 			common.ErrPrintf("sql cannot use database [%s] with [%s]: %v\n", gCfg.DataSource.MySQL.Database, _sql, err)
-			os.Exit(errno.ErrorConnectDatabase)
+			os.Exit(errno.ErrorSQLExec.Code())
 		} else {
 			common.OutPrintf("sql use database [%s] successfully: %v\n", gCfg.DataSource.MySQL.Database, r)
 		}
@@ -70,7 +70,7 @@ func InitDatabase() {
 		})
 		if nil != err {
 			common.ErrPrintf("gorm cannot open database with [sql connection]: %v\n", err)
-			os.Exit(errno.ErrorConnectDatabase)
+			os.Exit(errno.ErrorGORMOpen.Code())
 		}
 	}
 
@@ -82,12 +82,12 @@ func InitDatabase() {
 				common.ErrPrintf("gorm cannot create table [%s]: %v\n", t.TableName(), err)
 			}
 		}
-		createTableFunc(system.Department{})
-		createTableFunc(system.RcAPI{})
-		createTableFunc(system.Role{})
-		createTableFunc(system.RoleResource{})
-		createTableFunc(system.User{})
-		createTableFunc(system.UserRole{})
+		createTableFunc(po.Department{})
+		createTableFunc(po.RcAPI{})
+		createTableFunc(po.Role{})
+		createTableFunc(po.RoleResource{})
+		createTableFunc(po.User{})
+		createTableFunc(po.UserRole{})
 	}
 
 	admin := initAdmin()
@@ -98,8 +98,8 @@ func InitDatabase() {
 	}
 }
 
-func initAdmin() system.User {
-	admin := system.User{}
+func initAdmin() po.User {
+	admin := po.User{}
 	admin.Service.Id = common.ObjectIdB32x()
 	admin.Code = "P00000000"
 	admin.Name = "系统管理员"

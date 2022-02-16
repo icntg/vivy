@@ -27,9 +27,10 @@ data-source:
     show-sql: false
     username: root
   redis:
-    addr: localhost:6379
-    db: 0
-    password: <password>
+    address: localhost:6379
+    max-idle: 10
+    password: root
+    protocol: tcp
 dev:
   debug: false
 service:
@@ -39,7 +40,7 @@ service:
   static-path: ./web
   template-html: true
 zap:
-  director: ./logs
+  directory: ./logs
   encode-level: --TODO--
   format: --TODO--
   level: info

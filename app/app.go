@@ -5,6 +5,7 @@ import (
 	"app/core/global/service"
 	"app/core/system/initialize"
 	"app/core/utility/common"
+	"app/core/utility/errno"
 	"os"
 )
 
@@ -22,12 +23,14 @@ func main() {
 	// 根据启动参数初始化数据库
 	if *sysArgs.FlagInitDatabase {
 		initialize.InitDatabase()
-		os.Exit(0)
+		os.Exit(errno.ErrorSuccess.Code())
 	} else {
 		_ = global.GetGORM()
-		common.OutPrintf("success to initialize loggers.\n")
-
+		common.OutPrintf("success to initialize data access object.\n")
+		_ = global.GetRedis()
+		common.OutPrintf("success to initialize redis store.\n")
 	}
+	// TODO: 启动mongodb
 	// 启动服务
 	httpService := global.GetGinService()
 	httpService.AddRoutes(

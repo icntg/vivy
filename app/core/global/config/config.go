@@ -6,6 +6,7 @@ import (
 	"app/core/utility/common"
 	"app/core/utility/errno"
 	"bytes"
+	"encoding/hex"
 	"github.com/spf13/viper"
 	yaml "gopkg.in/yaml.v2"
 	"os"
@@ -53,23 +54,30 @@ func ReadFromYamlFile(filename string) config.Config {
 	if nil != err {
 		common.ErrPrintf("viper cannot read config [%s]: %v\n", filename, err)
 		common.OutPrintf(systemArgs.FlagUsage)
-		os.Exit(errno.ErrorReadConfig)
+		os.Exit(errno.ErrorConfigRead.Code())
 	}
-	ret := config.DefaultConfig()
-	err = v.Unmarshal(&ret)
+	ret := config.DefaultConfig() // 默认配置
+	err = v.Unmarshal(&ret)       // 外部配置文件覆盖默认配置
 	if nil != err {
 		common.ErrPrintf("viper cannot unmarshal data [%v]: %v\n", v, err)
 		common.OutPrintf(systemArgs.FlagUsage)
-		os.Exit(errno.ErrorReadConfig)
+		os.Exit(errno.ErrorConfigUnmarshal.Code())
+	}
+
+	ret.Service.SessionSecretBytes, err = hex.DecodeString(ret.Service.SessionSecret)
+	if nil != err {
+		common.ErrPrintf("hex cannot decode SessionSecret: %v\n", err)
+		os.Exit(errno.ErrorConfigDecodeHex.Code())
 	}
 	return ret
 }
 
 func SaveToYamlFile(filename string) {
-	bs, err := yaml.Marshal(config.DefaultConfig())
+	defaultConfig := config.DefaultConfig()
+	bs, err := yaml.Marshal(defaultConfig)
 	if nil != err {
-		common.ErrPrintf("yaml cannot marshal DefaultConfig: %v\n", err)
-		os.Exit(errno.ErrorGenerateConfigTemplate)
+		common.ErrPrintf("yaml cannot marshal DefaultConfig [%v]: %v\n", defaultConfig, err)
+		os.Exit(errno.ErrorConfigMarshal.Code())
 	}
 	v := viper.New()
 	v.SetConfigFile(filename)
@@ -79,13 +87,13 @@ func SaveToYamlFile(filename string) {
 	err = v.ReadConfig(bytes.NewBuffer(bs))
 	if nil != err {
 		common.ErrPrintf("viper cannot read in data [%v]: %v\n", string(bs), err)
-		os.Exit(errno.ErrorGenerateConfigTemplate)
+		os.Exit(errno.ErrorConfigViperRead.Code())
 	}
 	err = v.SafeWriteConfig()
 	if nil != err {
 		common.ErrPrintf("viper cannot write config [%v]: %v\n", filename, err)
-		os.Exit(errno.ErrorGenerateConfigTemplate)
+		os.Exit(errno.ErrorConfigWrite.Code())
 	}
 	common.OutPrintf("config template is written to [%s].", path.Join(curDir, filename))
-	os.Exit(0)
+	os.Exit(errno.ErrorSuccess.Code())
 }

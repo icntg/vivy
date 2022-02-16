@@ -1,4 +1,4 @@
-package database
+package mysql
 
 import (
 	"app/core/global/config"
@@ -33,13 +33,13 @@ func Instance() *gorm.DB {
 		if nil != err {
 			common.ErrPrintf("gorm cannot open with [%s]: %v\n", dsnMask, err)
 			common.ErrPrintf("gorm cannot connect database. maybe you should use --init to initialize database?\n")
-			os.Exit(errno.ErrorConnectDatabase)
+			os.Exit(errno.ErrorGORMOpen.Code())
 		}
 		sqlDB, err := _gormInstance.DB()
 		if nil != err {
-			common.ErrPrintf("_gormInstance cannot call DB: %v\n", err)
+			common.ErrPrintf("_gormInstance cannot call MaxIdle: %v\n", err)
 			common.ErrPrintf("gorm cannot connect database. maybe you should use --init to initialize database?\n")
-			os.Exit(errno.ErrorConnectDatabase)
+			os.Exit(errno.ErrorGORMDBHandler.Code())
 		}
 		sqlDB.SetMaxOpenConns(gCfg.DataSource.MySQL.MaxOpen)
 		sqlDB.SetMaxIdleConns(gCfg.DataSource.MySQL.MaxIdle)
@@ -47,28 +47,9 @@ func Instance() *gorm.DB {
 		if nil != err {
 			common.ErrPrintf("sqlDB cannot call Stats: %v\n", err)
 			common.ErrPrintf("gorm cannot connect database. maybe you should use --init to initialize database?\n")
-			os.Exit(errno.ErrorConnectDatabase)
+			os.Exit(errno.ErrorGORMDBStats.Code())
 		}
 		common.OutPrintf("gorm open with [%s]: %s\n", dsnMask, string(stats))
 	})
 	return _gormInstance
-}
-
-func TestDatabaseConnection() {
-	// test mysql
-
-	// test redis
-	// test mongodb
-}
-
-func TestMySQLConnection() {
-
-}
-
-func TestRedisConnection() {
-
-}
-
-func TestMongoDBConnection() {
-
 }
