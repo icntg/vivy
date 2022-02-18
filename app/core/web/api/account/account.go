@@ -3,7 +3,8 @@ package account
 import "github.com/gin-gonic/gin"
 
 // LoginByUsernameAndPassword
-// @param
+// @Param data body {username:"string",password:"string"}
+
 func LoginByUsernameAndPassword(c *gin.Context) {
 }
 

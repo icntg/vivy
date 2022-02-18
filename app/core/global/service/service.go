@@ -2,12 +2,15 @@ package service
 
 import (
 	"app/core/global/config"
+	"app/core/global/database/redis"
 	"app/core/global/logger"
 	"app/core/system/middleware/fake"
 	middlewareLogger "app/core/system/middleware/logger"
 	"app/core/system/middleware/recovery"
+	"app/core/system/middleware/session"
 	"app/core/utility/common"
 	"fmt"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -26,6 +29,7 @@ func Instance() *Service {
 		gConfig := config.Instance()
 		oLog := logger.Instance().OutputLogger
 		aLog := logger.Instance().AccessLogger
+		store := redis.SessionStoreInstance()
 
 		if gConfig.Dev.Debug {
 			oLog.Info("gin-server uses DebugMode.")
@@ -42,7 +46,8 @@ func Instance() *Service {
 		instance.GinEngine.
 			Use(recovery.GinRecovery(aLog, true)).
 			Use(middlewareLogger.GinLogger(aLog)).
-			Use(fake.GinFake())
+			Use(fake.GinFake()).
+			Use(sessions.Sessions(session.CookieName, *store))
 		//instance.Start()
 		_serviceInstance = &instance
 	})

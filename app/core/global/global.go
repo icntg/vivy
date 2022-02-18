@@ -39,7 +39,7 @@ func init() {
 		GetConfig = globalConfig.Instance
 		GetLoggers = logger.Instance
 		GetGORM = mysql.Instance
-		GetRedis = globalRedis.Instance
+		GetRedis = globalRedis.SessionStoreInstance
 		GetGinService = service.Instance
 	}
 

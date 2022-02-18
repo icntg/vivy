@@ -14,7 +14,11 @@ var (
 	_once       sync.Once
 )
 
-func Instance() *redis.Store {
+func initStores() {
+
+}
+
+func SessionStoreInstance() *redis.Store {
 	_once.Do(func() {
 		var (
 			gCfg = config.Instance()

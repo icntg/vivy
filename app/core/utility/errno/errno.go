@@ -8,6 +8,11 @@ import (
 )
 
 type errCodeMsg string
+type ErrCodeMsg struct {
+	Code    int
+	Error   string
+	Message string
+}
 
 const (
 	// 负数为系统错误
@@ -44,6 +49,8 @@ const (
 	ErrorRedis      errCodeMsg = "0x00000050 | RedisError | Redis错误"
 	ErrorRedisStore errCodeMsg = "0x00000051 | Redis New Store Error | Redis连接错误"
 
+	ErrorCaptcha         errCodeMsg = "0x00010000 | CaptchaError | 图形验证码错误"
+	ErrorCaptchaGenerate errCodeMsg = "0x00010001 | Generate Captcha Error | 生成图形验证码错误"
 	//ErrorStartGinService                     = 0x1010
 	//ErrorConnectDatabase                     = 0x1020
 )
@@ -62,4 +69,13 @@ func (e errCodeMsg) Exit() {
 	msg := strings.TrimSpace(a[1])
 	common.ErrPrintf(msg + "\n")
 	os.Exit(code)
+}
+
+func (e errCodeMsg) Fold() ErrCodeMsg {
+	a := strings.Split(string(e), "|")
+	c, _ := strconv.ParseInt(strings.TrimSpace(a[0]), 16, 64)
+	code := int(c)
+	msg0 := strings.TrimSpace(a[1])
+	msg1 := strings.TrimSpace(a[2])
+	return ErrCodeMsg{code, msg0, msg1}
 }
