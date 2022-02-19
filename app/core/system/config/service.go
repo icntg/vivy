@@ -9,6 +9,7 @@ type Service struct {
 	TemplateHtml       bool   `mapstructure:"template-html" json:"templateHtml" yaml:"template-html"`
 	SessionSecret      string `mapstructure:"session-secret" json:"sessionSecret" yaml:"session-secret"`
 	SessionSecretBytes []byte `mapstructure:"-" json:"-" yaml:"-"`
+	CookieTimeout      int    `mapstructure:"cookie-timeout" json:"cookieTimeout" yaml:"cookie-timeout"`
 }
 
 func (ths *Service) GetServiceAddress() string {

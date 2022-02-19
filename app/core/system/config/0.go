@@ -41,6 +41,7 @@ func DefaultConfig() Config {
 			true,
 			"<session-secret-in-HEX>",
 			nil,
+			3600,
 		},
 		Captcha: Captcha{
 			5,
