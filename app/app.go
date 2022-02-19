@@ -2,10 +2,10 @@ package main
 
 import (
 	"app/core/global"
-	"app/core/global/service"
 	"app/core/system/initialize"
 	"app/core/utility/common"
 	"app/core/utility/errno"
+	"app/core/web/router"
 	"os"
 )
 
@@ -34,7 +34,8 @@ func main() {
 	// 启动服务
 	httpService := global.GetGinService()
 	httpService.AddRoutes(
-		service.AddStaticRoute,
+		router.WebRouters,
+		//gin_service.AddStaticRoute,
 	)
 	httpService.Start()
 }

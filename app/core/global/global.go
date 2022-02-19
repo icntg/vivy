@@ -12,8 +12,8 @@ import (
 	globalConfig "app/core/global/config"
 	"app/core/global/database/mysql"
 	globalRedis "app/core/global/database/redis"
+	"app/core/global/gin_service"
 	"app/core/global/logger"
-	"app/core/global/service"
 	"app/core/system/config"
 	"github.com/gin-contrib/sessions/redis"
 	"gorm.io/gorm"
@@ -30,7 +30,7 @@ var (
 	GetLoggers    func() *logger.Loggers
 	GetGORM       func() *gorm.DB
 	GetRedis      func() *redis.Store
-	GetGinService func() *service.Service
+	GetGinService func() *gin_service.Service
 )
 
 func init() {
@@ -40,7 +40,7 @@ func init() {
 		GetLoggers = logger.Instance
 		GetGORM = mysql.Instance
 		GetRedis = globalRedis.SessionStoreInstance
-		GetGinService = service.Instance
+		GetGinService = gin_service.Instance
 	}
 
 }

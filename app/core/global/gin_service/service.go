@@ -1,4 +1,4 @@
-package service
+package gin_service
 
 import (
 	"app/core/global/config"
@@ -7,7 +7,7 @@ import (
 	"app/core/system/middleware/fake"
 	middlewareLogger "app/core/system/middleware/logger"
 	"app/core/system/middleware/recovery"
-	"app/core/system/middleware/session"
+	"app/core/system/middleware/session_in_cookie"
 	"app/core/utility/common"
 	"fmt"
 	"github.com/gin-contrib/sessions"
@@ -47,7 +47,7 @@ func Instance() *Service {
 			Use(recovery.GinRecovery(aLog, true)).
 			Use(middlewareLogger.GinLogger(aLog)).
 			Use(fake.GinFake()).
-			Use(sessions.Sessions(session.CookieName, *store))
+			Use(sessions.Sessions(session_in_cookie.CookieName, *store))
 		//instance.Start()
 		_serviceInstance = &instance
 	})
@@ -70,14 +70,16 @@ func (ths Service) AddRoutes(addRouteFunctions ...func(engine *gin.Engine)) {
 }
 
 func AddStaticRoute(engine *gin.Engine) {
-	loggers := logger.Instance()
+	var (
+		oLog = logger.Instance().OutputLogger
+	)
 
 	if gin.Mode() == gin.DebugMode {
 		engine.StaticFS("/", http.Dir("../web/dist"))
 	} else {
 		binaryPath, err := common.GetBinaryPath()
 		if nil != err {
-			loggers.OutputLogger.Error("cannot GetBinaryPath")
+			oLog.Errorf("cannot GetBinaryPath: %v\n", err)
 			engine.StaticFS("/", http.Dir("./static"))
 		} else {
 			engine.StaticFS("/", http.Dir(filepath.Join(binaryPath, "static")))

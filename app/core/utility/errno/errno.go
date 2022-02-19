@@ -2,15 +2,17 @@ package errno
 
 import (
 	"app/core/utility/common"
+	"github.com/pkg/errors"
 	"os"
 	"strconv"
 	"strings"
 )
 
 type errCodeMsg string
+
 type ErrCodeMsg struct {
 	Code    int
-	Error   string
+	Error   error
 	Message string
 }
 
@@ -20,7 +22,7 @@ const (
 	// 0x0000xxxx 为基础组件错误
 	// 0x0001xxxx 为业务逻辑错误
 
-	ErrorSuccess errCodeMsg = "0x00000000 | ErrorSuccess | 无错误"
+	ErrorSuccess errCodeMsg = "00000000 | ErrorSuccess | 无错误"
 
 	ErrorSystemArgs      errCodeMsg = "0x00000010 | SystemArgsError | 命令行参数错误"
 	ErrorSystemArgsIsNil errCodeMsg = "0x00000011 | SystemArgs is nil | 命令行参数为空"
@@ -51,6 +53,13 @@ const (
 
 	ErrorCaptcha         errCodeMsg = "0x00010000 | CaptchaError | 图形验证码错误"
 	ErrorCaptchaGenerate errCodeMsg = "0x00010001 | Generate Captcha Error | 生成图形验证码错误"
+
+	ErrorSecureCookie             errCodeMsg = "0x00010010 | SecureCookieError | 安全cookie错误"
+	ErrorSecureCookieTooLarge     errCodeMsg = "0x00010011 | Secure Cookie Size > 3.5kb | 安全cookie长度过长"
+	ErrorSecureCookieMissTimeData errCodeMsg = "0x00010012 | Secure Cookie Time is missing | 安全cookie缺少时间戳数据"
+	ErrorSecureCookieTimeout      errCodeMsg = "0x00010013 | Secure Cookie Timeout | 安全cookie超时"
+
+	ErrorParamIsNil errCodeMsg = "-0x1 | PointerIsNil | 空指针"
 	//ErrorStartGinService                     = 0x1010
 	//ErrorConnectDatabase                     = 0x1020
 )
@@ -77,5 +86,5 @@ func (e errCodeMsg) Fold() ErrCodeMsg {
 	code := int(c)
 	msg0 := strings.TrimSpace(a[1])
 	msg1 := strings.TrimSpace(a[2])
-	return ErrCodeMsg{code, msg0, msg1}
+	return ErrCodeMsg{code, errors.New(msg0), msg1}
 }

@@ -64,9 +64,9 @@ func ReadFromYamlFile(filename string) config.Config {
 		os.Exit(errno.ErrorConfigUnmarshal.Code())
 	}
 
-	ret.Service.SessionSecretBytes, err = hex.DecodeString(ret.Service.SessionSecret)
+	ret.Service.SessionSecretInBytes, err = hex.DecodeString(ret.Service.SessionSecretInHex)
 	if nil != err {
-		common.ErrPrintf("hex cannot decode SessionSecret: %v\n", err)
+		common.ErrPrintf("hex cannot decode SessionSecretInHex: %v\n", err)
 		os.Exit(errno.ErrorConfigDecodeHex.Code())
 	}
 	return ret

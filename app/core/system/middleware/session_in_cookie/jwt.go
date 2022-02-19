@@ -1,4 +1,4 @@
-package session
+package session_in_cookie
 
 import (
 	"app/core/utility/basex/base36"

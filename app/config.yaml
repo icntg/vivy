@@ -32,11 +32,12 @@ data-source:
     password: root
     protocol: tcp
 dev:
-  debug: false
+  debug: true
 service:
+  cookie-timeout: 3600
   host: 127.0.0.1
   port: 9088
-  session-secret: 1234567890abcdef
+  session-secret-in-hex: 1234567890abcdef
   static-path: ./web
   template-html: true
 zap:

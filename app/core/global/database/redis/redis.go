@@ -29,7 +29,7 @@ func SessionStoreInstance() *redis.Store {
 			rc.Protocol,
 			rc.Address,
 			rc.Password,
-			gCfg.Service.SessionSecretBytes,
+			gCfg.Service.SessionSecretInBytes,
 		)
 		if nil != err {
 			common.ErrPrintf("redis cannot make new store: %v\n", err)
