@@ -1,5 +1,7 @@
 from typing import Optional
 
+import yaml
+
 from .constant import Constant
 
 
@@ -11,13 +13,14 @@ class Config(Constant):
         self.HTTP_PORT: int = 8999
         self.SECRET_HEX: Optional[str] = None
         # logger
-        self.LOGGER_FILE: Optional[str] = None
+        self.LOGGER_DIRECTORY: str = './logs'
         self.LOGGER_FORMATTER: str = '[%(levelname)s]%(asctime)s[%(filename)s:%(lineno)s][%(name)s]: %(message)s'
         # setting
-        self.DEBUG: Optional[bool] = None
+        self.DEBUG: bool = False
 
     def read(self, filename='config.yaml'):
-        pass
+        with open(filename, 'r', encoding='utf-8') as f:
+            print(yaml.load(f.read(),Loader=yaml.Loader))
 
     def write(self, filename='config.yaml'):
         pass
