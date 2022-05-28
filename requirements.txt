@@ -1,0 +1,4 @@
+sanic>=22.3.2
+sanic-ext>=22.3.2
+sqlalchemy>=1.4.36
+pydantic>=1.9.1
