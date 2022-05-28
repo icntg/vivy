@@ -6,3 +6,15 @@ logger:
   directory: ./logs
   formatter: '[%(levelname)s]%(asctime)s[%(filename)s:%(lineno)s][%(name)s]: %(message)s'
 debug: true
+dataSource:
+  MySQL:
+    host: 127.0.0.1
+    port: 3306
+    username: root
+    password: root
+    database: vivy
+    option: '?parseTime=true&charset=utf8mb4&loc=Local'
+    maxIdle: 10
+    maxOpen: 100
+    showSql: true
+    showExecTime: true

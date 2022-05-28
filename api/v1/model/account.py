@@ -1,8 +1,10 @@
-from enum import unique
-from sqlalchemy import INTEGER, Column, VARCHAR, TIMESTAMP, Text
+from sqlalchemy import Column, VARCHAR, TIMESTAMP, Text
+
 from .__base__ import Base
 
+
 class Account(Base):
+    __tablename__ = 'account'
     code = Column(VARCHAR(20), unique=True, nullable=False, doc='工号')
     name = Column(VARCHAR(10), nullable=False, doc='姓名')
     login_name = Column(VARCHAR(50), unique=True, doc='登录名/昵称')
@@ -16,3 +18,5 @@ class Account(Base):
     last_address = Column(VARCHAR(50), doc='最后登录IP')
 
 
+class Role(Base):
+    pass
