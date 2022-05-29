@@ -18,5 +18,21 @@ class Account(Base):
     last_address = Column(VARCHAR(50), doc='最后登录IP')
 
 
+class Department(Base):
+    pass
+
+
 class Role(Base):
+    pass
+
+
+class AccountRole(Base):
+    pass
+
+
+class Resource(Base):
+    pass
+
+
+class RoleResource(Base):
     pass
