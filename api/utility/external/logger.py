@@ -19,8 +19,10 @@ def init_logger(
     if Path(directory).is_absolute():
         filepath = Path(directory)
     else:
-        filepath = Path(Constant.BASE) / Path(directory)
-    filename = str(filepath / Path(name + '.log'))
+        filepath = Path(Constant.BASE).joinpath(directory)
+    if not filepath.exists():
+        filepath.mkdir(0o755, True, True)
+    filename = str(filepath.joinpath(name + '.log'))
     handlers: List[Handler] = [TimedRotatingFileHandler(
         filename,
         when=when,

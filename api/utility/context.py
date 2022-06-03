@@ -14,8 +14,9 @@ from .external.functions import err_put
 
 class Context(ModuleType):
     def __init__(self) -> None:
-        super(ModuleType).__init__('context', '')
+        super().__init__('context')
         self.config: Optional[Config] = None
+
         self.secret: Optional[Union[bytes, bytearray]] = None
 
         self.AccessLogger: Optional[Logger] = None
@@ -30,10 +31,13 @@ class Context(ModuleType):
         self.config = cfg
         try:
             self.secret = binascii.unhexlify(self.config.SECRET_HEX)
+            if len(self.secret) != 32:
+                import hashlib
+                self.secret = hashlib.sha256(self.secret)
         except Exception as e:
             _ = e
             err_put('[WARNING] cannot decode hex secret. to use random instead.\n')
-            self.secret = os.urandom(64)
+            self.secret = os.urandom(32)
 
     def init_loggers(self):
         try:

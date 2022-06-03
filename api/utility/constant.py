@@ -3,10 +3,10 @@ from typing import Optional
 
 
 class Constant:
-    BASE: str = str(Path(__file__).absolute().parent.parent.parent.parent)
+    BASE: str = str(Path(__file__).absolute().parent.parent.parent)
 
-    def __init__(self, name: str = "constant", doc: Optional[str] = ...) -> None:
-        super().__init__(name, doc)
+    def __init__(self) -> None:
+        pass
 
     class ConstError(TypeError):
         pass
