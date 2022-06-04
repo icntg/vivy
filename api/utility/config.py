@@ -11,15 +11,17 @@ from .external.functions import err_put
 class Config(Constant):
     def __init__(self) -> None:
         super().__init__()
+        # web
+        self.COOKIE = 'PHPSESSID'
         # path
-        self.STATIC = str(Path(self.BASE) / Path('resource/static'))
-        self.TEMPLATE = str(Path(self.BASE) / Path('resource/template'))
+        self.STATIC = str(Path(self.BASE).joinpath('resource', 'static'))
+        self.TEMPLATE = str(Path(self.BASE).joinpath('resource', 'template'))
         # config
         self.HTTP_HOST: str = '127.0.0.1'
         self.HTTP_PORT: int = 8999
         self.SECRET_HEX: Optional[str] = None
         # logger
-        self.LOGGER_DIRECTORY: str = './logs'
+        self.LOGGER_DIRECTORY: str = str(Path(self.BASE).joinpath('logs'))
         self.LOGGER_FORMATTER: str = '[%(levelname)s]%(asctime)s[%(filename)s:%(lineno)s][%(name)s]: %(message)s'
         # setting
         self.DEBUG: bool = False
@@ -40,7 +42,7 @@ class Config(Constant):
     def read(self, filename='config.yaml'):
         try:
             if not Path(filename).is_absolute():
-                filename = str(Path(self.BASE).joinpath(filename))
+                filename = str(Path(self.BASE).joinpath('conf', filename))
             cfg = yaml.load(open(filename, 'r', encoding='utf-8').read(), Loader=yaml.Loader)
             if 'http' in cfg and 'host' in cfg['http']:
                 # self.HTTP_HOST = cfg['http']['host']

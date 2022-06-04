@@ -13,15 +13,11 @@ docker run -d --rm --name mariadb \
 source venv/bin/activate
 python vivy.py -X pycache_prefix=.  # __pycache__ in one place
 """
-import os
-
-from api import create_app
-from api.utility.config import Config
-
 
 
 def main():
     # 1. read config
+    from api.utility.config import Config
     config: Config = Config()
     config.read()
 
@@ -34,6 +30,7 @@ def main():
     # 3. connect database
     ctx.init_data_source()
     # 4. start web service
+    from api import create_app
     app = create_app()
     app.run(
         host=ctx.config.HTTP_HOST,

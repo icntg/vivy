@@ -1,80 +1,99 @@
-*{
-    margin:0 auto;
-    padding:0;
+* {
+    padding: 0;
+    margin: 0;
 }
-/*添加一个浅灰色背景*/
+
 body{
-    background-color:#eee;
+    margin:0;
+    padding:0;
+    font-family:sans-serif;
+    /*background: url(bs3.jpg);*/
+    background-color: #00796a;
+    background-size:cover;
 }
-
-.content{
-    /*border:1px solid red;*/
-    width:300px;
-    margin-top:50px;
+.box{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    /*实现块元素百分比下居中*/
+    width:450px;
+    padding:50px;
+    background: rgba(0,0,0,.8);
+    box-sizing:border-box;
+    box-shadow: 0 15px 25px rgba(0,0,0,.5);
+    border-radius:15px;
 }
-
-.content .panel{
-    border:1px solid #ccc;
-    border-radius:5px;
-    height:220px;
-    background-color:#fff;
+.box h2{
+    margin:0 0 30px;
+    padding:0;
+    color: #fff;
+    text-align:center;
 }
-.content .panel .group{
-    margin:30px 10px 10px 20px;
+.box .input-box{
+    position:relative;
 }
-.content .panel .group ul{
-    list-style: none;
-    margin-top:15px;
-}
-
-.content .panel .group ul li{
-    margin-top:2px;
-}
-
-.content .panel .group ul li input{
-    line-height:22px;
-    width:250px;
-    font-size: 14px;
-    font-family: "微软雅黑","宋体";
-}
-.content .panel .group ul li label{
-    font-size: 14px;
-    font-family: "黑体","微软雅黑","宋体";
-    font-weight: bold;
-}
-
-.content .panel .login{
-    text-align: center;
-    /*border:1px solid red;*/
-    margin-top:20px;
-
-}
-.content button{
-    width:255px;
-    height:30px;
-    background-color:#008000;
-    border:none;
-    color:#fff;
+.box .input-box input{
+    width: 100%;
+    padding:10px 0;
     font-size:16px;
-    font-weight: bold;
-    cursor:pointer;
-}
-
-
-.content .register{
-    margin-top:15px;
-    text-align: center;
-}
-
-.content .register button{
-    width:80px;
-    height:30px;
-    border:none;
-    font-size:14px;
-    background-color:#4c6bb2;
     color:#fff;
-    font-family: "微软雅黑";
-    text-align: center;
-    margin-left:30px;
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+    border:none;
+    border-bottom: 1px solid #fff;
+    outline:none;
+    background: transparent;
+}
+.box .input-box label{
+    position:absolute;
+    top:0;
+    left:0;
+    padding:10px 0;
+    font-size: 16px;
+    color:#fff;
+    pointer-events:none;
+    transition:.5s;
+}
+.box .input-box input:focus ~ label,
+.box .input-box input:valid ~ label
+{
+    top:-18px;
+    left:0;
+    color:#03a9f4;
+    font-size:14px;
+}
+.box input[type="submit"]
+{
+    background: transparent;
+    border:none;
+    outline:none;
+    font-size: 16px;
+    color:#fff;
+    background: #03a9f4;
+    padding:15px 20px;
+    cursor: pointer;
+    border-radius:10px;
+}
 
+.box a.primary {
+    background-color: #03a9f4;
+}
+
+.box a {
+    font-size: 16px;
+    margin-left: 45px;
+    outline: white 0 solid;
+    border-radius: 10px;
+    background-color: gray;
+    padding: 18px 15px;
+    text-decoration: none;
+    color: white;
+}
+
+.box p {
+    font-size: 16px;
+    padding: 10px;
+    margin-bottom: 50px;
+    color:#fff;
 }
