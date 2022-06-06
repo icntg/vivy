@@ -25,7 +25,7 @@ def check_init_state() -> bool:
     True = 已初始化
     False = 未初始化
     """
-    init_file_path: Path = Path(Constant.BASE).joinpath('conf', 'initialize.log')
+    init_file_path: Path = Path(Constant.BASE).joinpath('conf', 'static_initialize.log')
     conf_file_path: Path = Path(Constant.BASE).joinpath('conf', 'config.yaml')
     use_service_mode = True
     if not init_file_path.exists():
@@ -34,7 +34,7 @@ def check_init_state() -> bool:
     if not conf_file_path.exists():
         err_print(f'[{conf_file_path}] does not exist\n')
         use_service_mode = False
-    std_print('to start initialize mode ...\n')
+    std_print('to start static_initialize mode ...\n')
     return use_service_mode
 
 

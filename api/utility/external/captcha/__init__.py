@@ -11,6 +11,7 @@ def get_random_color():
     b = random.randint(0, 255)
     return r, g, b
 
+
 def get_random_char():
     random_num = str(random.randint(0, 9))
     random_lower = chr(random.randint(97, 122))  # 小写字母a~z
@@ -37,7 +38,7 @@ def draw_point(draw):
     for i in range(50):
         x = random.randint(0, width)
         y = random.randint(0, height)
-        draw.point((x,y), fill=get_random_color())
+        draw.point((x, y), fill=get_random_color())
 
 
 def create_img() -> Tuple[str, str]:
