@@ -13,9 +13,37 @@ docker run -d --rm --name mariadb \
 source venv/bin/activate
 python vivy.py -X pycache_prefix=.  # __pycache__ in one place
 """
+from pathlib import Path
+
+from api.utility.constant import Constant
+from api.utility.external.functions import err_print, std_print
 
 
-def main():
+def check_init_state() -> bool:
+    """
+    检查初始化状态。
+    True = 已初始化
+    False = 未初始化
+    """
+    init_file_path: Path = Path(Constant.BASE).joinpath('conf', 'initialize.log')
+    conf_file_path: Path = Path(Constant.BASE).joinpath('conf', 'config.yaml')
+    use_service_mode = True
+    if not init_file_path.exists():
+        err_print(f'[{init_file_path}] does not exist\n')
+        use_service_mode = False
+    if not conf_file_path.exists():
+        err_print(f'[{conf_file_path}] does not exist\n')
+        use_service_mode = False
+    std_print('to start initialize mode ...\n')
+    return use_service_mode
+
+
+def initialize_mode():
+    from api.utility.initialize import create_and_run
+    create_and_run()
+
+
+def service_mode():
     # 1. read config
     from api.utility.config import Config
     config: Config = Config()
@@ -40,6 +68,13 @@ def main():
         # workers=os.cpu_count(),
         workers=1,  # 目前由于采用文件log原因，只能一个进程。等采用rsyslog服务之后再改进。
     )
+
+
+def main():
+    if check_init_state():
+        service_mode()
+    else:
+        initialize_mode()
 
 
 if __name__ == '__main__':

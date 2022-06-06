@@ -54,3 +54,5 @@ pnpm-debug.log*
 # python
 venv
 logs
+*.pyc
+__pycache__

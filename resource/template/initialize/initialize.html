@@ -1,0 +1,45 @@
+{% extends "__frame__.html" %}
+{% block body %}
+    <div class="box">
+        <h2>配置初始化</h2>
+        <form method="post" action="initialize.php">
+            <div class="input-box">
+                <input type="text" id="code" name="code" required="required"/>
+                <label for="code">账号</label>
+            </div>
+            <div class="input-box">
+                <input type="password" id="pass" name="pass" required="required"/>
+                <label for="pass">密码</label>
+            </div>
+            <input type="submit" name="" value="登录"/>
+            <a href="/account/login-with-portal.html">SSO登录</a>
+            <a href="/account/register.html">注册</a>
+        </form>
+    </div>
+{% endblock %}
+{% block script %}
+<script>
+    const {createApp, reactive, toRefs} = Vue;
+    const data = reactive({
+        step: 0,
+        formModel: {
+            host: 'localhost',
+            port: 3306,
+            username: '',
+            password: '',
+            database: '',
+            createDatabase: false,
+            opsUsername: '',
+            opsPassword: '',
+        },
+    })
+    const app = createApp({
+        setup() {
+            return {
+                ...toRefs(data)
+            }
+        }
+    });
+    app.mount("#app");
+</script>
+{% endblock %}

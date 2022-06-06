@@ -4,6 +4,7 @@
 
 
 """
+
 from sanic import Sanic, Blueprint, Request, response
 
 from .__ssr__ import jinja2_env
@@ -37,6 +38,21 @@ async def register_page(_: Request):
     return response.html(template.render())
 
 
+class LoginUtil:
+    # @staticmethod
+    # async def find_account_by_code(code: str) -> Account:
+    #     session = ctx.DataSource.async_session()
+    #     with session.begin():
+    #         results = await session.execute(select(Account).where(Account.code==code))
+    #         data: Account = results.scalar()
+    #         return data
+
+    @staticmethod
+    def verify_php_session_id(enc: str) -> int:
+
+        return 0
+
+
 @bp.route('/login.php', methods=['POST'])
 async def login(request: Request):
     """
@@ -45,13 +61,28 @@ async def login(request: Request):
     如果不需要TOTP校验，则校验用户名密码；
     如果需要TOTP校验，将用户信息保存到cookie，跳转到TOTP页面。
     """
-    if ctx.config.COOKIE in request.cookies:
-        pass
+    cn = ctx.config.COOKIE
+    if cn in request.cookies and LoginUtil.verify_php_session_id(request.cookies[cn]) > 0:
+        return response.redirect('/')  # 已登录
+
+    # if ctx.config.COOKIE in request.cookies:
+    #     pass
+    # if LoginUtil.verify_php_session_id(request.cookies[ctx.config.COOKIE]) <= 0:
+    #     pass
+    print(request.form.get('code'))
+    print(request.form.get('pass1'))
+    return response.text(str(request.form))
 
 
 def login_with_auth_code(_: Request):
     pass
 
 
-def logout(_: Request):
-    pass
+@bp.route('/logout.php', methods=['GET'])
+def logout(request: Request):
+    if ctx.config.COOKIE in request.cookies:
+        template = jinja2_env.get_template('account/logout.html')
+        res = response.html(template.render())
+        del res.cookies[ctx.config.COOKIE]
+    else:
+        return response.redirect('/')

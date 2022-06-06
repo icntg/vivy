@@ -5,7 +5,7 @@ import yaml
 
 from .constant import Constant
 from .external.data_source import DataSource, MySQL
-from .external.functions import err_put
+from .external.functions import err_print
 
 
 class Config(Constant):
@@ -16,10 +16,13 @@ class Config(Constant):
         # path
         self.STATIC = str(Path(self.BASE).joinpath('resource', 'static'))
         self.TEMPLATE = str(Path(self.BASE).joinpath('resource', 'template'))
-        # config
+        # http
         self.HTTP_HOST: str = '127.0.0.1'
         self.HTTP_PORT: int = 8999
         self.SECRET_HEX: Optional[str] = None
+        # session
+        self.LOGIN_COOKIE_TIMEOUT: int = 60 * 5  # 登录过程时间5分钟
+        self.SESSION_TIMEOUT: int = 60 * 60 * 2  # 会话时间2个小时
         # logger
         self.LOGGER_DIRECTORY: str = str(Path(self.BASE).joinpath('logs'))
         self.LOGGER_FORMATTER: str = '[%(levelname)s]%(asctime)s[%(filename)s:%(lineno)s][%(name)s]: %(message)s'
@@ -66,7 +69,7 @@ class Config(Constant):
                 # self.DATASOURCE = MySQL(cfg['dataSource'])
                 self.__dict__['DATASOURCE'] = MySQL(cfg['dataSource']['MySQL'])
         except Exception as e:
-            err_put(f'[ERROR] cannot read config file [{filename}]: {e}\n')
+            err_print(f'[ERROR] cannot read config file [{filename}]: {e}\n')
 
     def write(self, filename='config.yaml'):
         # TODO:

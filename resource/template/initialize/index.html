@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="purecss.min.css"/>
+    <script src="jquery.min.js"></script>
+    <script src="vue.global.prod.js"></script>
+    <title>初始化</title>
+</head>
+<body>
+<div id="app" class="pure-g"
+     style="width: 960px; position: absolute; margin: auto; left: 0; top: 0; right: 0; bottom: 0;">
+    <div class="pure-u-1">
+        <form class="pure-form pure-form-stacked">
+            <div v-if="step==0">
+                <fieldset>
+                    <legend><h2>数据库 MairaDB / MySQL</h2></legend>
+                    <label for="host">HOST</label>
+                    <input class="pure-input-1" type="text" id="host" name="host" placeholder="数据库地址"
+                           :value="formModel.host"/>
+                    <label for="port">PORT</label>
+                    <input class="pure-input-1" type="text" id="port" name="port" placeholder="数据库端口"
+                           :value="formModel.port"/>
+                    <label for="username">USERNAME</label>
+                    <input class="pure-input-1" type="text" id="username" name="username" placeholder="数据库用户"
+                           :value="formModel.username"/>
+                    <label for="password">PASSWORD</label>
+                    <input class="pure-input-1" type="password" id="password" name="password" placeholder="数据库密码"
+                           :value="formModel.password"/>
+                    <label for="database">DATABASE</label>
+                    <input class="pure-input-1" type="text" id="database" name="database" placeholder="数据库名称"
+                           :value="formModel.database"/>
+                    <label for="create-database" class="pure-checkbox">
+                        <input type="checkbox" id="create-database" v-model="formModel.createDatabase"/> 新建数据库与专属用户
+                    </label>
+                    <div v-show="formModel.createDatabase">
+                        <span class="pure-form-message">如需创建数据库与专属用户，请确保初始化使用的用户有相应权限。</span>
+                        <label for="ops-username">OPS USERNAME</label>
+                        <input class="pure-input-1" type="text" id="ops-username" name="ops-username"
+                               placeholder="新数据库专属用户"
+                               :value="formModel.opsUsername"/>
+                        <label for="ops-password">OPS PASSWORD</label>
+                        <input class="pure-input-1" type="password" id="ops-password" name="ops-password"
+                               placeholder="新数据库专属密码"
+                               :value="formModel.opsPassword"/>
+                        <label for="database">DATABASE</label>
+                    </div>
+                    <hr/>
+                    <button type="button" class="pure-button pure-button-primary">初始化</button>
+                </fieldset>
+            </div>
+
+            <div v-if="step==1">
+
+            </div>
+
+        </form>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp, reactive, toRefs} = Vue;
+    const data = reactive({
+        step: 0,
+        formModel: {
+            host: 'localhost',
+            port: 3306,
+            username: '',
+            password: '',
+            database: '',
+            createDatabase: false,
+            opsUsername: '',
+            opsPassword: '',
+        },
+    })
+    const app = createApp({
+        setup() {
+            return {
+                ...toRefs(data)
+            }
+        }
+    });
+    app.mount("#app");
+</script>
+</html>

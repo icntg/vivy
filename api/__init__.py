@@ -24,14 +24,15 @@ class CustomErrorHandler(ErrorHandler):
 
 
 def create_app() -> Sanic:
-    app = Sanic(name='VIVY')
+    ctx: Context = get_context()
+    app = Sanic(name='VIVY', ctx=ctx)
 
     # 很遗憾，sanic的静态文件好像不支持默认文件名，比如'/' => '/index.html'
     # app.static('/', app.ctx.config.STATIC, stream_large_files=True)
     # app.static('/', str(Path(app.ctx.config.STATIC).joinpath('index.html')), stream_large_files=True)
 
     # from api.controller.v1 import checkin
-    ctx: Context = get_context()
+
     app.static('/', ctx.config.STATIC)
     import api.ssr.index
     import api.ssr.login

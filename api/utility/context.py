@@ -9,7 +9,7 @@ from typing import Union, Optional
 from .config import Config
 from .external import logger
 from .external.async_sqlalchemy import AsyncSQLAlchemy
-from .external.functions import err_put
+from .external.functions import err_print
 
 
 class Context(ModuleType):
@@ -36,7 +36,7 @@ class Context(ModuleType):
                 self.secret = hashlib.sha256(self.secret)
         except Exception as e:
             _ = e
-            err_put('[WARNING] cannot decode hex secret. to use random instead.\n')
+            err_print('[WARNING] cannot decode hex secret. to use random instead.\n')
             self.secret = os.urandom(32)
 
     def init_loggers(self):
@@ -48,7 +48,7 @@ class Context(ModuleType):
                 self.config.LOGGER_FORMATTER,
             )
         except Exception as e:
-            err_put(f'[ERROR] cannot initialize OutputLogger, {type(e)}:{e}')
+            err_print(f'[ERROR] cannot initialize OutputLogger, {type(e)}:{e}')
             sys.exit(-1)
         try:
             self.SecureLogger = logger.init_logger(
@@ -58,7 +58,7 @@ class Context(ModuleType):
                 self.config.LOGGER_FORMATTER,
             )
         except Exception as e:
-            err_put(f'[ERROR] cannot initialize SecureLogger, {type(e)}:{e}')
+            err_print(f'[ERROR] cannot initialize SecureLogger, {type(e)}:{e}')
             sys.exit(-1)
         try:
             self.AccessLogger = logger.init_logger(
@@ -68,7 +68,7 @@ class Context(ModuleType):
                 self.config.LOGGER_FORMATTER,
             )
         except Exception as e:
-            err_put(f'[ERROR] cannot initialize AccessLogger, {type(e)}:{e}')
+            err_print(f'[ERROR] cannot initialize AccessLogger, {type(e)}:{e}')
             sys.exit(-1)
 
     def init_data_source(self):

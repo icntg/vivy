@@ -17,7 +17,7 @@ async def index(request: Request):
     2. 如果已登录则渲染主页
     """
     if ctx.config.COOKIE not in request.cookies:
-        return response.redirect('account/login.html')
+        return response.redirect('/account/login.html')
     # if verify jwt cookie:
     #     write secure log
     #     return response.redirect('/account/login.html')
