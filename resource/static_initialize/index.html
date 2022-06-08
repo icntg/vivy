@@ -32,31 +32,31 @@
             </ul>
         </div>
         <form class="pure-form pure-form-stacked">
-            <div v-show="step==0"><!-- 提交页面 -->
+            <div v-if="step==0"><!-- 提交页面 -->
                 <fieldset>
                     <legend><h2>保存</h2></legend>
                     <a class="pure-button pure-button-primary" @click="initialize()">设置完成，进行初始化！</a>
                 </fieldset>
             </div>
 
-            <div v-show="step==1"><!-- MySQL设置 -->
+            <div v-if="step==1"><!-- MySQL设置 -->
                 <fieldset>
                     <legend><h2>数据库 MairaDB / MySQL</h2></legend>
                     <label for="host">HOST</label>
                     <input class="pure-input-1" type="text" id="host" name="host" placeholder="数据库地址"
-                           :value="modelMysql.host"/>
+                           v-model="modelMysql.host"/>
                     <label for="port">PORT</label>
                     <input class="pure-input-1" type="text" id="port" name="port" placeholder="数据库端口"
-                           :value="modelMysql.port"/>
+                           v-model="modelMysql.port"/>
                     <label for="username">USERNAME</label>
                     <input class="pure-input-1" type="text" id="username" name="username" placeholder="数据库用户"
-                           :value="modelMysql.username"/>
+                           v-model="modelMysql.username"/>
                     <label for="password">PASSWORD</label>
                     <input class="pure-input-1" type="password" id="password" name="password" placeholder="数据库密码"
-                           :value="modelMysql.password"/>
+                           v-model="modelMysql.password"/>
                     <label for="database">DATABASE</label>
                     <input class="pure-input-1" type="text" id="database" name="database" placeholder="数据库名称"
-                           :value="modelMysql.database"/>
+                           v-model="modelMysql.database"/>
                     <label for="create-database" class="pure-checkbox">
                         <input type="checkbox" id="create-database" v-model="modelMysql.createDatabase"/> 新建数据库与专属用户
                     </label>
@@ -65,25 +65,25 @@
                         <label for="ops-username">OPS USERNAME</label>
                         <input class="pure-input-1" type="text" id="ops-username" name="ops-username"
                                placeholder="新数据库专属用户"
-                               :value="modelMysql.opsUsername"/>
+                               v-model="modelMysql.opsUsername"/>
                         <label for="ops-password">OPS PASSWORD</label>
                         <input class="pure-input-1" type="password" id="ops-password" name="ops-password"
                                placeholder="新数据库专属密码"
-                               :value="modelMysql.opsPassword"/>
+                               v-model="modelMysql.opsPassword"/>
                         <label for="database">DATABASE</label>
                     </div>
                 </fieldset>
             </div>
 
-            <div v-show="step==2"><!-- 系统管理员 -->
+            <div v-if="step==2"><!-- 系统管理员 -->
                 <fieldset>
                     <legend><h2>系统管理员</h2></legend>
                     <label for="login-name">LOGIN NAME</label>
                     <input class="pure-input-1" type="text" id="login-name" name="login-name" placeholder="系统管理员登录名"
-                           :value="modelAdmin.loginName"/>
+                           v-model="modelAdmin.loginName"/>
                     <label for="password">PASSWORD</label>
                     <input class="pure-input-1" type="password" id="password" name="password" placeholder="系统管理员密码"
-                           :value="modelAdmin.password"/>
+                           v-model="modelAdmin.password"/>
                     <a class="pure-button" @click="generateToken()"
                        v-if="modelAdmin.token.length==0||modelAdmin.tokenQRCode.length==0">生成时间令牌</a>
                     <div v-if="modelAdmin.token.length>0&&modelAdmin.tokenQRCode.length>0">
@@ -95,15 +95,15 @@
                 </fieldset>
             </div>
 
-            <div v-show="step==3"><!-- http服务 -->
+            <div v-if="step==3"><!-- http服务 -->
                 <fieldset>
                     <legend><h2>HTTP 服务</h2></legend>
                     <label for="http-host">HOST</label>
                     <input class="pure-input-1" type="text" id="http-host" name="http-host" placeholder="HTTP服务监听地址"
-                           :value="modelHttp.host"/>
+                           v-model="modelHttp.host"/>
                     <label for="http-port">PORT</label>
                     <input class="pure-input-1" type="text" id="http-port" name="http-port" placeholder="HTTP服务监听端口"
-                           :value="modelHttp.port"/>
+                           v-model="modelHttp.port"/>
                     <label for="http-secret-random" class="pure-checkbox">
                         <input type="checkbox" id="http-secret-random" v-model="modelHttp.randomSecret"/>使用随机密钥
                     </label>
@@ -111,17 +111,17 @@
                         <label for="http-secret">SECRET(HEX)</label>
                         <input class="pure-input-1" type="text" id="http-secret" name="http-secret"
                                placeholder="HTTP内置密钥"
-                               :value="modelHttp.secretHex"/>
+                               v-model="modelHttp.secretHex"/>
                     </div>
                 </fieldset>
             </div>
 
-            <div v-show="step==4">
+            <div v-if="step==4">
                 <legend><h2>Redis</h2></legend>
                 <span>模块开发中</span>
             </div>
 
-            <div v-show="step==5">
+            <div v-if="step==5">
                 <legend><h2>MongoDB</h2></legend>
                 <span>模块开发中</span>
             </div>

@@ -25,7 +25,7 @@ def check_init_state() -> bool:
     True = 已初始化
     False = 未初始化
     """
-    init_file_path: Path = Path(Constant.BASE).joinpath('conf', 'static_initialize.log')
+    init_file_path: Path = Path(Constant.BASE).joinpath('conf', 'initialize.log')
     conf_file_path: Path = Path(Constant.BASE).joinpath('conf', 'config.yaml')
     use_service_mode = True
     if not init_file_path.exists():

@@ -1,7 +1,9 @@
 """
 初始化工具。单独一个文件，用于交互生成配置。
+需要在$BASE/conf目录下，生成
 """
 from pathlib import Path
+from typing import Dict
 
 from sanic import Request, response
 
@@ -9,10 +11,30 @@ from api.utility.constant import Constant
 from api.utility.external.google_token import generate_token_and_qrcode
 
 STATIC = Path(Constant.BASE).joinpath('resource', 'static_initialize')
+CONF = Path(Constant.BASE).joinpath('conf')
 
 
-def initialize():
-    pass
+class Initialization:
+    def __init__(self, conf_dict: Dict):
+        self.conf_dict = conf_dict
+        self._session = None
+        pass
+
+    def _create_database(self):
+        pass
+
+    def _create_tables(self):
+        pass
+
+    def _insert_admin(self):
+        pass
+
+    def _write_logs(self):
+        pass
+
+    def _write_config(self):
+        pass
+
 
 
 def create_and_run():
@@ -28,7 +50,7 @@ def create_and_run():
     @app.post('/api/token')
     async def generate_token(req: Request):
         login_name = req.body.decode()
-        token, img = generate_token_and_qrcode('日晷', login_name, '温州信通')
+        token, img = generate_token_and_qrcode('星轨', login_name, '温州信通')
         return response.json(dict(token=token, qrcode=img))
 
     @app.post('/api/initialization')
