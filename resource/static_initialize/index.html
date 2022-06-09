@@ -66,6 +66,10 @@
                         <input class="pure-input-1" type="text" id="ops-username" name="ops-username"
                                placeholder="新数据库专属用户"
                                v-model="modelMysql.opsUsername"/>
+                        <label for="ops-username-ip">OPS USERNAME IP</label>
+                        <input class="pure-input-1" type="text" id="ops-username-ip" name="ops-username-ip"
+                               placeholder="新数据库专属用户"
+                               v-model="modelMysql.opsUsernameIP"/>
                         <label for="ops-password">OPS PASSWORD</label>
                         <input class="pure-input-1" type="password" id="ops-password" name="ops-password"
                                placeholder="新数据库专属密码"
@@ -142,6 +146,7 @@
             database: '',
             createDatabase: false,
             opsUsername: '',
+            opsUsernameIP: '%',
             opsPassword: '',
         },
         modelAdmin: {
