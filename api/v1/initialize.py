@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from api.utility.constant import Constant
+from api.utility.external.async_sqlalchemy import AsyncSQLAlchemy
 from api.utility.external.google_token import generate_token_and_qrcode
 from api.v1.model.__base__ import BaseModel
 
@@ -31,18 +32,10 @@ mysql+aiomysql://
 {quote(m['username'])}:{quote(m['password'])}@
 {m['host']}:{m['port']}?charset=utf8mb4
         '''.strip().replace('\n', '')
-        self._engine: Engine = create_async_engine(self._dsn)
-        self._session: Union[AsyncSession, sessionmaker] = sessionmaker(
-            class_=AsyncSession,
-            autocommit=False,
-            autoflush=False,
-            bind=self._engine,
-        )
+        self._db: AsyncSQLAlchemy = AsyncSQLAlchemy(self._dsn)
         self.logs = io.StringIO()
 
-    async def do(self):
-        self._create_database()
-        self._create_tables()
+
 
     async def _create_database(self):
         m = self.cfg['mysql']
@@ -102,7 +95,7 @@ def create_and_run():
         cfg = req.json
         print(cfg)
         init = Initialization(cfg)
-        await app.add_task(init.do())
+        await app.add_task(init._create_database, name='create_database')
         return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
 
     app.run(

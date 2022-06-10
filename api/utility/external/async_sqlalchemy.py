@@ -1,18 +1,10 @@
+from contextvars import ContextVar  # Python>=3.7
+
 from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine
 
 
 class AsyncSQLAlchemy:
     def __init__(self, data_source_url: str):
         self.engine: Engine = create_async_engine(data_source_url)
-        self.session_local = sessionmaker(
-            class_=AsyncSession,
-            autocommit=False,
-            autoflush=False,
-            bind=self.engine,
-        )
-
-    async def async_session(self) -> AsyncSession:
-        async with self.session_local() as session:
-            yield session
+        self.base_model_session_ctx = ContextVar("session")
