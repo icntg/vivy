@@ -4,19 +4,14 @@
 """
 import asyncio
 import io
-from concurrent.futures import Executor, ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional
 from urllib.parse import quote
 
+import aiomysql
 from sanic import Request, response
-from sqlalchemy.dialects.mysql import aiomysql
-from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 
 from api.utility.constant import Constant
-from api.utility.external.async_sqlalchemy import AsyncSQLAlchemy
 from api.utility.external.google_token import generate_token_and_qrcode
 from api.v1.model.__base__ import BaseModel
 
@@ -26,49 +21,67 @@ CONF = Path(Constant.BASE).joinpath('conf')
 
 class Initialization:
     def __init__(self, conf_dict: Dict):
-        self.cfg = conf_dict
-        self.logs = io.StringIO()
+        self.cfg: Dict = conf_dict
+        self.logs: io.StringIO = io.StringIO()
+        self.loop = asyncio.get_event_loop()
+        self.pool: Optional[aiomysql.Pool] = None
+
         m = self.cfg['mysql']
         self._dsn: str = f'''
         mysql+aiomysql://
         {quote(m['username'])}:{quote(m['password'])}@
         {m['host']}:{m['port']}?charset=utf8mb4
                 '''.strip().replace('\n', '')
-        self.executor: Executor = ThreadPoolExecutor(1)
-        self.executor.submit(asyncio.run, (self.start_loop(),))
 
-    async def start_loop(self):
-        await self._create_database()
-
-    async def _create_database(self):
-        print('_create_database')
-
-
-        # m = self.cfg['mysql']
-        # if m['createDatabase']:
-        #     self.logs.write('To create database\n')
-        #     session: AsyncSession = yield self._session
-        #     self.logs.write(f'yield session {id(session)}\n')
-        #     sql = f'''CREATE DATABASE `{m['database']}` /*!40100 COLLATE 'utf8mb4_bin' */;'''
-        #     await session.execute(sql)
-        #     self.logs.write(f'create database with sql: {sql}\n')
-        #     sql = f'''CREATE USER '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED BY '{m['opsPassword']}';'''
-        #     await session.execute(sql)
-        #     self.logs.write(f'create user with sql: {sql}\n')
-        #     sql = f'''GRANT ALL PRIVILEGES ON *.`{m['database']}` TO '{m['opsUsername']}'@'{m['opsUsernameIP']}';'''
-        #     await session.execute(sql)
-        #     self.logs.write(f'grant privileges with sql: {sql}\n')
-
-    async def _create_tables(self):
+    async def async_init(self):
         m = self.cfg['mysql']
-        self.logs.write('To create tables\n')
-        session: AsyncSession = yield self._session
-        self.logs.write(f'yield session {id(session)}\n')
-        sql = f'''use {m['database']};'''
-        await session.execute(sql)
-        self.logs.write(f'switch database with sql: {sql}\n')
-        BaseModel.metadata.create_all(self._engine)
-        self.logs.write('create tables with sqlalchemy engine\n')
+        self.pool = await aiomysql.create_pool(
+            host=m['host'],
+            port=m['port'], user=m['username'],
+            password=m['password'],
+            loop=self.loop,
+            # cursorclass=aiomysql.DictCursor,
+            cursorclass=aiomysql.SSCursor,
+            echo=True,
+        )
+
+    def __del__(self):
+        if self.pool is not None:
+            self.pool.close()
+
+    async def create_database(self):
+        m = self.cfg['mysql']
+        if m['createDatabase']:
+            self.logs.write('To create database\n')
+            sql = f'''CREATE DATABASE IF NOT EXISTS `{m['database']}` /*!40100 COLLATE 'utf8mb4_bin' */;'''
+            self.logs.write(f'create database with sql: {sql}\n')
+            try:
+                async with self.pool.acquire() as conn:
+                    async with conn.cursor(aiomysql.SSCursor) as cur:
+                        await cur.execute(sql)
+                        self.logs.write(f'success\n')
+            except Exception as e:
+                self.logs.write(f'error: {e}\n')
+
+            sql = f'''
+CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED BY '{m['opsPassword']}';
+'''.strip()
+            cur: aiomysql.DictCursor = await cur.execute(sql)
+            self.logs.write(f'create user with sql: {sql}\n')
+            sql = f'''GRANT ALL PRIVILEGES ON `{m['database']}`.* TO '{m['opsUsername']}'@'{m['opsUsernameIP']}';'''
+            cur: aiomysql.DictCursor = await cur.execute(sql)
+            self.logs.write(f'grant privileges with sql: {sql}\n')
+
+    # async def _create_tables(self):
+    #     m = self.cfg['mysql']
+    #     self.logs.write('To create tables\n')
+    #     session: AsyncSession = yield self._session
+    #     self.logs.write(f'yield session {id(session)}\n')
+    #     sql = f'''use {m['database']};'''
+    #     await session.execute(sql)
+    #     self.logs.write(f'switch database with sql: {sql}\n')
+    #     BaseModel.metadata.create_all(self._engine)
+    #     self.logs.write('create tables with sqlalchemy engine\n')
 
     def _insert_admin(self):
         pass
@@ -101,6 +114,8 @@ def create_and_run():
         cfg = req.json
         print(cfg)
         init = Initialization(cfg)
+        await init.async_init()
+        await init.create_database()
         return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
 
     app.run(
