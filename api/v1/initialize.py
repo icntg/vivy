@@ -2,12 +2,15 @@
 初始化工具。单独一个文件，用于交互生成配置。
 需要在$BASE/conf目录下，生成
 """
+import asyncio
 import io
+from concurrent.futures import Executor, ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, Union
 from urllib.parse import quote
 
 from sanic import Request, response
+from sqlalchemy.dialects.mysql import aiomysql
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -23,35 +26,38 @@ CONF = Path(Constant.BASE).joinpath('conf')
 
 class Initialization:
     def __init__(self, conf_dict: Dict):
-        from sanic import Sanic
-        self.app = Sanic.get_app()
         self.cfg = conf_dict
+        self.logs = io.StringIO()
         m = self.cfg['mysql']
         self._dsn: str = f'''
-mysql+aiomysql://
-{quote(m['username'])}:{quote(m['password'])}@
-{m['host']}:{m['port']}?charset=utf8mb4
-        '''.strip().replace('\n', '')
-        self._db: AsyncSQLAlchemy = AsyncSQLAlchemy(self._dsn)
-        self.logs = io.StringIO()
+        mysql+aiomysql://
+        {quote(m['username'])}:{quote(m['password'])}@
+        {m['host']}:{m['port']}?charset=utf8mb4
+                '''.strip().replace('\n', '')
+        self.executor: Executor = ThreadPoolExecutor(1)
+        self.executor.submit(asyncio.run, (self.start_loop(),))
 
-
+    async def start_loop(self):
+        await self._create_database()
 
     async def _create_database(self):
-        m = self.cfg['mysql']
-        if m['createDatabase']:
-            self.logs.write('To create database\n')
-            session: AsyncSession = yield self._session
-            self.logs.write(f'yield session {id(session)}\n')
-            sql = f'''CREATE DATABASE `{m['database']}` /*!40100 COLLATE 'utf8mb4_bin' */;'''
-            await session.execute(sql)
-            self.logs.write(f'create database with sql: {sql}\n')
-            sql = f'''CREATE USER '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED BY '{m['opsPassword']}';'''
-            await session.execute(sql)
-            self.logs.write(f'create user with sql: {sql}\n')
-            sql = f'''GRANT ALL PRIVILEGES ON *.`{m['database']}` TO '{m['opsUsername']}'@'{m['opsUsernameIP']}';'''
-            await session.execute(sql)
-            self.logs.write(f'grant privileges with sql: {sql}\n')
+        print('_create_database')
+
+
+        # m = self.cfg['mysql']
+        # if m['createDatabase']:
+        #     self.logs.write('To create database\n')
+        #     session: AsyncSession = yield self._session
+        #     self.logs.write(f'yield session {id(session)}\n')
+        #     sql = f'''CREATE DATABASE `{m['database']}` /*!40100 COLLATE 'utf8mb4_bin' */;'''
+        #     await session.execute(sql)
+        #     self.logs.write(f'create database with sql: {sql}\n')
+        #     sql = f'''CREATE USER '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED BY '{m['opsPassword']}';'''
+        #     await session.execute(sql)
+        #     self.logs.write(f'create user with sql: {sql}\n')
+        #     sql = f'''GRANT ALL PRIVILEGES ON *.`{m['database']}` TO '{m['opsUsername']}'@'{m['opsUsernameIP']}';'''
+        #     await session.execute(sql)
+        #     self.logs.write(f'grant privileges with sql: {sql}\n')
 
     async def _create_tables(self):
         m = self.cfg['mysql']
@@ -95,7 +101,6 @@ def create_and_run():
         cfg = req.json
         print(cfg)
         init = Initialization(cfg)
-        await app.add_task(init._create_database, name='create_database')
         return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
 
     app.run(
