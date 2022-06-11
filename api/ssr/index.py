@@ -11,12 +11,13 @@ app: Sanic = Sanic.get_app()
 
 
 @app.route('/')
+@app.route('/index.html')
 async def index(request: Request):
     """
     1. 检查登录凭证。如果未登录则跳转到登录页面。
     2. 如果已登录则渲染主页
     """
-    if ctx.config.COOKIE not in request.cookies:
+    if ctx.config.SESSION.COOKIE not in request.cookies:
         return response.redirect('/account/login.html')
     # if verify jwt cookie:
     #     write secure log

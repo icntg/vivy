@@ -15,8 +15,8 @@ app: Sanic = Sanic.get_app()
 bp: Blueprint = Blueprint('account', 'account')
 
 
-@bp.route('/login-with-code.html', methods=['GET'])
-@bp.route('/login.html', methods=['GET'])
+@bp.route('/login-with-code.html')
+@bp.route('/login.html')
 async def login_with_code_page(_: Request):
     """
     使用账号、密码登录
@@ -26,13 +26,13 @@ async def login_with_code_page(_: Request):
     return response.html(template.render())
 
 
-@bp.route('/login-with-portal.html', methods=['GET'])
+@bp.route('/login-with-portal.html')
 async def login_with_portal_page(_: Request):
     template = jinja2_env.get_template('account/login0portal.html')
     return response.html(template.render())
 
 
-@bp.route('/register.html', methods=['GET'])
+@bp.route('/register.html')
 async def register_page(_: Request):
     template = jinja2_env.get_template('account/register.html')
     return response.html(template.render())
@@ -61,7 +61,7 @@ async def login(request: Request):
     如果不需要TOTP校验，则校验用户名密码；
     如果需要TOTP校验，将用户信息保存到cookie，跳转到TOTP页面。
     """
-    cn = ctx.config.COOKIE
+    cn = ctx.config.SESSION.COOKIE
     if cn in request.cookies and LoginUtil.verify_php_session_id(request.cookies[cn]) > 0:
         return response.redirect('/')  # 已登录
 
@@ -80,9 +80,9 @@ def login_with_auth_code(_: Request):
 
 @bp.route('/logout.php', methods=['GET'])
 def logout(request: Request):
-    if ctx.config.COOKIE in request.cookies:
+    if ctx.config.SESSION.COOKIE in request.cookies:
         template = jinja2_env.get_template('account/logout.html')
         res = response.html(template.render())
-        del res.cookies[ctx.config.COOKIE]
+        del res.cookies[ctx.config.SESSION.COOKIE]
     else:
         return response.redirect('/')

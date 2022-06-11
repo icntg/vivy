@@ -4,8 +4,10 @@ from typing import Optional
 
 class Constant:
     BASE: Path = Path(__file__).absolute().parent.parent.parent
-    INIT: Path = Path(BASE).joinpath('conf', 'initialize.log')
-    CONF: Path = Path(BASE).joinpath('conf', 'config.yaml')
+    INIT: Path = BASE.joinpath('conf', 'initialize.log')
+    CONF: Path = BASE.joinpath('conf', 'config.yaml')
+    STATIC: Path = BASE.joinpath('resource', 'static')
+    TEMPLATE: Path = BASE.joinpath('resource', 'template')
 
     def __init__(self) -> None:
         pass

@@ -35,8 +35,13 @@
             <div v-if="step==0"><!-- 提交页面 -->
                 <fieldset>
                     <legend><h2>保存</h2></legend>
-                    <a class="pure-button pure-button-primary" @click="initialize()">设置完成，进行初始化！</a>
+                    <a class="pure-button pure-button-primary" @click="initialize()"
+                       v-bind:class="{'pure-button-disabled':statusInit.ing>0}">已完成设置，进行初始化！</a>
+                    <span class="pure-form-message" v-if="statusInit.ing>0" v-text="statusInit.msg"></span>
                 </fieldset>
+                <div v-if="statusInit.log.length>0">
+                    <pre style="border: #565d64 1px solid"><code v-text="statusInit.log"></code></pre>
+                </div>
             </div>
 
             <div v-if="step==1"><!-- MySQL设置 -->
@@ -137,6 +142,11 @@
     const {createApp, reactive, toRefs, onMounted} = Vue;
     const data = reactive({
         step: 1,
+        statusInit: {
+            ing: 0,
+            msg: '正在初始化，请稍后',
+            log: '',
+        },
         modelMysql: {
             host: 'localhost',
             port: 3306,
@@ -178,6 +188,7 @@
             }
 
             function initialize() {
+                data.statusInit.ing = 1
                 const toPost = {
                     mysql: data.modelMysql,
                     admin: data.modelAdmin,
@@ -190,8 +201,15 @@
                     url: '/api/initialization', data: JSON.stringify(toPost),
                 }).then(function (result) {
                     console.log(result)
+                    data.statusInit.log = result['logs']
+                    if (result['code'] === 0) {
+                        data.statusInit.msg = '初始化成功！'
+                    } else {
+                        data.statusInit.msg = result['message']
+                    }
                 }).catch(function (err) {
                     console.error(err)
+                    alert(err)
                 })
             }
 

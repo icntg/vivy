@@ -147,6 +147,7 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         role = api.v1.model.platform.Role()
         role.id = object_id()
         role.name = '系统管理员'
+        role.level = 9999
 
         admin = api.v1.model.platform.Account()
         admin.id = object_id()
@@ -178,7 +179,8 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
             self.logs.write(f'To write {Constant.INIT}\n')
             if not Constant.INIT.parent.exists():
                 Constant.INIT.parent.mkdir(0o755, True, True)
-            open(Constant.INIT, 'w').write(self.logs.getvalue())
+            with open(Constant.INIT, 'w') as f:
+                f.write(self.logs.getvalue())
             self.logs.write('success\n')
             return True
         except Exception as e:
@@ -191,11 +193,11 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
             if not Constant.CONF.parent.exists():
                 Constant.CONF.parent.mkdir(0o755, True, True)
             cfg: Config = Config()
-            cfg.use_default_value()
-            cfg.__dict__['HTTP_HOST'] = self.cfg['http']['host']
-            cfg.__dict__['HTTP_PORT'] = self.cfg['http']['port']
+            cfg.use_default_values()
+            cfg.HTTP.__dict__['HOST'] = self.cfg['http']['host']
+            cfg.HTTP.__dict__['PORT'] = self.cfg['http']['port']
             if not self.cfg['http']['randomSecret']:
-                cfg.__dict__['SECRET_HEX'] = self.cfg['http']['secretHex']
+                cfg.SESSION.__dict__['SECRET_HEX'] = self.cfg['http']['secretHex']
 
             m = self.cfg['mysql']
             if m['createDatabase']:
@@ -204,7 +206,8 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
             else:
                 username = m['username']
                 password = m['password']
-            cfg.__dict__['DATASOURCE'] = MySQL(dict(
+            cfg.DATA_SOURCES.clear()
+            cfg.DATA_SOURCES.append(MySQL(dict(
                 host=m['host'],
                 port=m['port'],
                 username=username,
@@ -215,14 +218,16 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
                 maxOpen=100,
                 showSql=False,
                 showExecTime=False,
-            ))
+            )))
             cfg.write(Constant.CONF)
             f = Constant.CONF.parent.joinpath('block.list')
             if not f.exists():
-                open(f, 'w').write('\n')
+                with open(f, 'w') as fp:
+                    fp.write('\n')
             f = Constant.CONF.parent.joinpath('allow.list')
             if not f.exists():
-                open(f, 'w').write('127.0.0.1\n')
+                with open(f, 'w') as fp:
+                    fp.write('127.0.0.1\n')
             self.logs.write('success\n')
             return True
         except Exception as e:
@@ -269,12 +274,12 @@ def create_and_run():
         ret = await init.insert_admin()
         if not ret:
             return response.json(dict(code=5, message='insert_admin', logs=init.logs.getvalue()))
-        ret = init.write_logs()
-        if not ret:
-            return response.json(dict(code=6, message='write_logs', logs=init.logs.getvalue()))
         ret = init.write_config()
         if not ret:
-            return response.json(dict(code=7, message='write_config', logs=init.logs.getvalue()))
+            return response.json(dict(code=6, message='write_config', logs=init.logs.getvalue()))
+        ret = init.write_logs()
+        if not ret:
+            return response.json(dict(code=7, message='write_logs', logs=init.logs.getvalue()))
 
         return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
 

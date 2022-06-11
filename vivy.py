@@ -31,7 +31,8 @@ def check_init_state() -> bool:
     if not Constant.CONF.exists():
         err_print(f'[{Constant.CONF}] does not exist\n')
         use_service_mode = False
-    std_print('to start static_initialize mode ...\n')
+    if not use_service_mode:
+        std_print('to start static_initialize mode ...\n')
     return use_service_mode
 
 
@@ -58,10 +59,10 @@ def service_mode():
     from api import create_app
     app = create_app()
     app.run(
-        host=ctx.config.HTTP_HOST,
-        port=ctx.config.HTTP_PORT,
-        access_log=False,
-        debug=ctx.config.DEBUG,
+        host=ctx.config.HTTP.HOST,
+        port=ctx.config.HTTP.PORT,
+        access_log=ctx.config.SETTING.DEBUG,
+        debug=ctx.config.SETTING.DEBUG,
         # workers=os.cpu_count(),
         workers=1,  # 目前由于采用文件log原因，只能一个进程。等采用rsyslog服务之后再改进。
     )

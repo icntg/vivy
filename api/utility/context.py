@@ -30,7 +30,7 @@ class Context(ModuleType):
     def init_with_config(self, cfg: Config):
         self.config = cfg
         try:
-            self.secret = binascii.unhexlify(self.config.SECRET_HEX)
+            self.secret = binascii.unhexlify(self.config.SESSION.SECRET_HEX)
             if len(self.secret) != 32:
                 import hashlib
                 self.secret = hashlib.sha256(self.secret)
@@ -43,9 +43,9 @@ class Context(ModuleType):
         try:
             self.OutputLogger = logger.init_logger(
                 'output',
-                self.config.LOGGER_DIRECTORY,
-                self.config.DEBUG,
-                self.config.LOGGER_FORMATTER,
+                str(self.config.SETTING.LOGGER_DIRECTORY),
+                self.config.SETTING.DEBUG,
+                self.config.SETTING.LOGGER_FORMATTER,
             )
         except Exception as e:
             err_print(f'[ERROR] cannot initialize OutputLogger, {type(e)}:{e}')
@@ -53,9 +53,9 @@ class Context(ModuleType):
         try:
             self.SecureLogger = logger.init_logger(
                 'secure',
-                self.config.LOGGER_DIRECTORY,
-                self.config.DEBUG,
-                self.config.LOGGER_FORMATTER,
+                str(self.config.SETTING.LOGGER_DIRECTORY),
+                self.config.SETTING.DEBUG,
+                self.config.SETTING.LOGGER_FORMATTER,
             )
         except Exception as e:
             err_print(f'[ERROR] cannot initialize SecureLogger, {type(e)}:{e}')
@@ -63,16 +63,16 @@ class Context(ModuleType):
         try:
             self.AccessLogger = logger.init_logger(
                 'access',
-                self.config.LOGGER_DIRECTORY,
-                self.config.DEBUG,
-                self.config.LOGGER_FORMATTER,
+                str(self.config.SETTING.LOGGER_DIRECTORY),
+                self.config.SETTING.DEBUG,
+                self.config.SETTING.LOGGER_FORMATTER,
             )
         except Exception as e:
             err_print(f'[ERROR] cannot initialize AccessLogger, {type(e)}:{e}')
             sys.exit(-1)
 
     def init_data_source(self):
-        self.DataSource = AsyncSQLAlchemy(str(self.config.DATASOURCE))
+        self.DataSource = AsyncSQLAlchemy(str(self.config.DATA_SOURCES[0]))
 
 
 sys.modules["ApplicationContext"] = Context()

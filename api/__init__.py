@@ -39,7 +39,7 @@ def create_app() -> Sanic:
     app.blueprint(api.ssr.login.bp)
     Extend(app)
 
-    if not ctx.config.DEBUG:
+    if not ctx.config.SETTING.DEBUG:
         app.error_handler = CustomErrorHandler()
 
     return app
