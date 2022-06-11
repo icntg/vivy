@@ -3,7 +3,9 @@ from typing import Optional
 
 
 class Constant:
-    BASE: str = str(Path(__file__).absolute().parent.parent.parent)
+    BASE: Path = Path(__file__).absolute().parent.parent.parent
+    INIT: Path = Path(BASE).joinpath('conf', 'initialize.log')
+    CONF: Path = Path(BASE).joinpath('conf', 'config.yaml')
 
     def __init__(self) -> None:
         pass

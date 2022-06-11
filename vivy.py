@@ -13,7 +13,6 @@ docker run -d --rm --name mariadb \
 source venv/bin/activate
 python vivy.py -X pycache_prefix=.  # __pycache__ in one place
 """
-from pathlib import Path
 
 from api.utility.constant import Constant
 from api.utility.external.functions import err_print, std_print
@@ -25,14 +24,12 @@ def check_init_state() -> bool:
     True = 已初始化
     False = 未初始化
     """
-    init_file_path: Path = Path(Constant.BASE).joinpath('conf', 'initialize.log')
-    conf_file_path: Path = Path(Constant.BASE).joinpath('conf', 'config.yaml')
     use_service_mode = True
-    if not init_file_path.exists():
-        err_print(f'[{init_file_path}] does not exist\n')
+    if not Constant.INIT.exists():
+        err_print(f'[{Constant.INIT}] does not exist\n')
         use_service_mode = False
-    if not conf_file_path.exists():
-        err_print(f'[{conf_file_path}] does not exist\n')
+    if not Constant.CONF.exists():
+        err_print(f'[{Constant.CONF}] does not exist\n')
         use_service_mode = False
     std_print('to start static_initialize mode ...\n')
     return use_service_mode

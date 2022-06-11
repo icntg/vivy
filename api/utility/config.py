@@ -1,3 +1,5 @@
+import binascii
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -12,14 +14,34 @@ class Config(Constant):
     def __init__(self) -> None:
         super().__init__()
         # web
+        self.COOKIE: Optional[str] = None
+        # path
+        self.STATIC: Optional[str] = None
+        self.TEMPLATE: Optional[str] = None
+        # http
+        self.HTTP_HOST: Optional[str] = None
+        self.HTTP_PORT: Optional[int] = None
+        self.SECRET_HEX: Optional[str] = None
+        # session
+        self.LOGIN_COOKIE_TIMEOUT: Optional[int] = None
+        self.SESSION_TIMEOUT: Optional[int] = None
+        # logger
+        self.LOGGER_DIRECTORY: Optional[str] = None
+        self.LOGGER_FORMATTER: Optional[str] = None
+        # setting
+        self.DEBUG: Optional[bool] = None
+        self.DATASOURCE: Optional[DataSource] = None
+
+    def use_default_value(self):
+        # web
         self.COOKIE = 'PHPSESSID'
         # path
         self.STATIC = str(Path(self.BASE).joinpath('resource', 'static'))
         self.TEMPLATE = str(Path(self.BASE).joinpath('resource', 'template'))
         # http
-        self.HTTP_HOST: str = '127.0.0.1'
-        self.HTTP_PORT: int = 8999
-        self.SECRET_HEX: Optional[str] = None
+        self.HTTP_HOST = '127.0.0.1'
+        self.HTTP_PORT = 8999
+        self.SECRET_HEX: Optional[str] = binascii.hexlify(os.urandom(32)).decode()
         # session
         self.LOGIN_COOKIE_TIMEOUT: int = 60 * 5  # 登录过程时间5分钟
         self.SESSION_TIMEOUT: int = 60 * 60 * 2  # 会话时间2个小时
@@ -70,7 +92,11 @@ class Config(Constant):
                 self.__dict__['DATASOURCE'] = MySQL(cfg['dataSource']['MySQL'])
         except Exception as e:
             err_print(f'[ERROR] cannot read config file [{filename}]: {e}\n')
+            self.use_default_value()
 
     def write(self, filename='config.yaml'):
-        # TODO:
-        pass
+        from copy import deepcopy
+        data = deepcopy(self.__dict__)
+        # todo: del data some p
+        with open(filename, "w", encoding="utf-8") as f:
+            yaml.dump(data, f)

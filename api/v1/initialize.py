@@ -1,6 +1,9 @@
 """
 初始化工具。单独一个文件，用于交互生成配置。
 需要在$BASE/conf目录下，生成
+config.yaml
+initialize.log
+共2个文件。
 """
 import asyncio
 import io
@@ -15,8 +18,10 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
+from api.utility.config import Config
 from api.utility.constant import Constant
-from api.utility.external import base32, identity
+from api.utility.external.data_source import MySQL
+from api.utility.external.functions import object_id
 from api.utility.external.google_token import generate_token_and_qrcode
 
 STATIC = Path(Constant.BASE).joinpath('resource', 'static_initialize')
@@ -31,23 +36,35 @@ class Initialization:
         self.pool: Optional[aiomysql.Pool] = None
         self.engine: Optional[Engine] = None
 
-    async def aio_mysql_connect(self):
+    async def aio_mysql_connect(self) -> bool:
         """
         创建数据库连接池（异步）
         由于需要异步创建，无法写在__init__函数中。需要单独进行。
+        原生连接用于建立数据库和数据库操作用户。
         """
         m = self.cfg['mysql']
-        self.pool = await aiomysql.create_pool(
-            host=m['host'],
-            port=m['port'], user=m['username'],
-            password=m['password'],
-            loop=self.loop,
-            cursorclass=aiomysql.DictCursor,
-            # cursorclass=aiomysql.SSCursor,
-            echo=True,
-        )
+        try:
+            self.logs.write('To connect database with aio_mysql\n')
+            self.pool = await aiomysql.create_pool(
+                host=m['host'],
+                port=m['port'], user=m['username'],
+                password=m['password'],
+                loop=self.loop,
+                # cursorclass=aiomysql.DictCursor,
+                cursorclass=aiomysql.SSCursor,
+                echo=True,
+            )
+            self.logs.write('success\n')
+            return True
+        except Exception as e:
+            self.logs.write(f'aio_mysql_connect failed: {e}\n')
+            return False
 
     async def alchemy_connect(self):
+        """
+        创建异步SQLAlchemy连接。
+        SQLAlchemy用于创建表和管理员信息。
+        """
         m = self.cfg['mysql']
         if m['createDatabase']:
             username = m['opsUsername']
@@ -60,7 +77,14 @@ class Initialization:
         {quote(username)}:{quote(password)}@
         {m['host']}:{m['port']}/{m['database']}?charset=utf8mb4
         '''.strip().replace('\n', '').replace(' ', '')
-        self.engine = create_async_engine(dsn, echo=True)
+        try:
+            self.logs.write('To connect database with SQLAlchemy\n')
+            self.engine = create_async_engine(dsn, echo=True)
+            self.logs.write('success\n')
+            return True
+        except Exception as e:
+            self.logs.write(f'alchemy_connect failed: {e}\n')
+            return False
 
     def __del__(self):
         """
@@ -68,12 +92,6 @@ class Initialization:
         """
         if self.pool is not None:
             self.pool.close()
-
-    def check_config(self) -> Optional[str]:
-        """
-        检查传入的配置文件，是否存在业务错误。
-        """
-        pass
 
     async def create_database(self) -> bool:
         m = self.cfg['mysql']
@@ -125,34 +143,91 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         self.logs.write('To insert admin\n')
         u = self.cfg['admin']
         import api.v1.model.platform
+
+        role = api.v1.model.platform.Role()
+        role.id = object_id()
+        role.name = '系统管理员'
+
         admin = api.v1.model.platform.Account()
-        admin.id = base32.encode_for_id(identity.ObjectId.generate()).decode()
+        admin.id = object_id()
         admin.code = u['loginName']
         admin.login_name = u['loginName']
         admin.password = nacl.pwhash.str(u['password'].encode()).decode()
         admin.token = u['token'].replace(' ', '')
         admin.comment = '系统管理员'
         admin.name = '系统管理员'
-        # now = int(time.time())
-        # admin.create_at = now
-        # admin.modify_at = now
+
+        account_role = api.v1.model.platform.AccountRole()
+        account_role.id = object_id()
+        account_role.account_id = admin.id
+        account_role.role_id = role.id
 
         try:
             async_session = sessionmaker(self.engine, expire_on_commit=False, class_=AsyncSession)
             async with async_session() as session:
                 async with session.begin():
-                    session.add(admin)
+                    session.add_all([role, admin, account_role])
             self.logs.write(f'success\n')
             return True
         except Exception as e:
             self.logs.write(f'error: {e}\n')
             return False
 
-    def _write_logs(self):
-        pass
+    def write_logs(self) -> bool:
+        try:
+            self.logs.write(f'To write {Constant.INIT}\n')
+            if not Constant.INIT.parent.exists():
+                Constant.INIT.parent.mkdir(0o755, True, True)
+            open(Constant.INIT, 'w').write(self.logs.getvalue())
+            self.logs.write('success\n')
+            return True
+        except Exception as e:
+            self.logs.write(f'error: {e}\n')
+            return False
 
-    def _write_config(self):
-        pass
+    def write_config(self) -> bool:
+        try:
+            self.logs.write(f'To write {Constant.CONF}\n')
+            if not Constant.CONF.parent.exists():
+                Constant.CONF.parent.mkdir(0o755, True, True)
+            cfg: Config = Config()
+            cfg.use_default_value()
+            cfg.__dict__['HTTP_HOST'] = self.cfg['http']['host']
+            cfg.__dict__['HTTP_PORT'] = self.cfg['http']['port']
+            if not self.cfg['http']['randomSecret']:
+                cfg.__dict__['SECRET_HEX'] = self.cfg['http']['secretHex']
+
+            m = self.cfg['mysql']
+            if m['createDatabase']:
+                username = m['opsUsername']
+                password = m['opsPassword']
+            else:
+                username = m['username']
+                password = m['password']
+            cfg.__dict__['DATASOURCE'] = MySQL(dict(
+                host=m['host'],
+                port=m['port'],
+                username=username,
+                password=password,
+                database=m['database'],
+                option='?parseTime=true&charset=utf8mb4&loc=Local',
+                maxIdle=10,
+                maxOpen=100,
+                showSql=False,
+                showExecTime=False,
+            ))
+            cfg.write(Constant.CONF)
+            f = Constant.CONF.parent.joinpath('block.list')
+            if not f.exists():
+                open(f, 'w').write('\n')
+            f = Constant.CONF.parent.joinpath('allow.list')
+            if not f.exists():
+                open(f, 'w').write('127.0.0.1\n')
+            self.logs.write('success\n')
+            return True
+        except Exception as e:
+            self.logs.write(f'error: {e}\n')
+            return False
 
 
 def create_and_run():
@@ -179,12 +254,27 @@ def create_and_run():
         print(json.dumps(cfg, ensure_ascii=False, indent=2))
 
         init = Initialization(cfg)
-        await init.aio_mysql_connect()
-        await init.create_database()
-
-        await init.alchemy_connect()
-        await init.create_tables()
-        await init.insert_admin()
+        ret = await init.aio_mysql_connect()
+        if not ret:
+            return response.json(dict(code=1, message='aio_mysql_connect', logs=init.logs.getvalue()))
+        ret = await init.create_database()
+        if not ret:
+            return response.json(dict(code=2, message='create_database', logs=init.logs.getvalue()))
+        ret = await init.alchemy_connect()
+        if not ret:
+            return response.json(dict(code=3, message='alchemy_connect', logs=init.logs.getvalue()))
+        ret = await init.create_tables()
+        if not ret:
+            return response.json(dict(code=4, message='create_tables', logs=init.logs.getvalue()))
+        ret = await init.insert_admin()
+        if not ret:
+            return response.json(dict(code=5, message='insert_admin', logs=init.logs.getvalue()))
+        ret = init.write_logs()
+        if not ret:
+            return response.json(dict(code=6, message='write_logs', logs=init.logs.getvalue()))
+        ret = init.write_config()
+        if not ret:
+            return response.json(dict(code=7, message='write_config', logs=init.logs.getvalue()))
 
         return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
 
