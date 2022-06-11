@@ -74,7 +74,6 @@
                         <input class="pure-input-1" type="password" id="ops-password" name="ops-password"
                                placeholder="新数据库专属密码"
                                v-model="modelMysql.opsPassword"/>
-                        <label for="database">DATABASE</label>
                     </div>
                 </fieldset>
             </div>
@@ -185,6 +184,7 @@
                     http: data.modelHttp,
                 }
                 delete toPost.admin.tokenQRCode
+                toPost.admin.token = toPost.admin.token.replace(' ', '')
 
                 $.post({
                     url: '/api/initialization', data: JSON.stringify(toPost),

@@ -8,7 +8,6 @@ XSalsa20 stream cipher / Poly1305 MAC
 
 import nacl.secret
 
-
 def encrypt(key: bytes, plain: bytes) -> bytes:
     box = nacl.secret.SecretBox(key)
     return box.encrypt(plain)
