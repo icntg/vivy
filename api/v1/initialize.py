@@ -116,7 +116,10 @@ class Initialization:
             sql = f'''
 CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED BY '{m['opsPassword']}';
 '''.strip()
-            self.logs.write(f'create user with sql: {sql}\n')
+            sql_mask = f'''
+CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED BY '**************';
+'''.strip()
+            self.logs.write(f'create user with sql: {sql_mask}\n')
             ret &= await run_sql(sql)
 
             sql = f'''GRANT ALL PRIVILEGES ON `{m['database']}`.* TO '{m['opsUsername']}'@'{m['opsUsernameIP']}';'''

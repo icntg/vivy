@@ -7,13 +7,15 @@
 import base64
 import os
 import struct
-from typing import Tuple, Optional
+import time
+from typing import Optional
 
 from sanic import Sanic, Blueprint, Request, response
 from sqlalchemy import select
 
 from .__ssr__ import jinja2_env
 from .. import Context, get_context
+from ..utility.constant import Constant
 from ..utility.external.functions import err_print
 from ..utility.external.pynacl_util import password_verify
 from ..v1.model.platform import Account
@@ -46,37 +48,60 @@ async def register_page(_: Request):
     return response.html(template.render())
 
 
-class AccountVO:
+class LoginVO:
     def __init__(self) -> None:
-        self.fake: bool = False
+        self.timestamp: int = int(time.gmtime() - Constant.TIME0)  # 时间戳，为了范围更加合理，从2022年1月1日开始计时的秒数。
+        self.form_password: str = ''
+        self.form_token: str = ''
+
+        self._ctrl_byte: int = 0
         self.id: int = 0
-        self.password: str = ''
-        self.has_token: bool = True
+        self.password_hash: str = ''
         self.token: Optional[str] = None
+        self.captcha: Optional[str] = None  # TODO: 图形校验码暂时未启用。
+
+    @property
+    def fake(self) -> bool:
+        return self._ctrl_byte & 1 == 0
+
+    @fake.setter
+    def fake(self, f: bool) -> None:
+        if f:
+            self._ctrl_byte &= 0b11111110
+        else:
+            self._ctrl_byte |= 0b00000001
+
+    @property
+    def has_token(self) -> bool:
+        return (self._ctrl_byte >> 1) & 1 == 1
+
+    @has_token.setter
+    def has_token(self, t: bool) -> None:
+        if t:
+            self._ctrl_byte |= 0b00000010
+        else:
+            self._ctrl_byte &= 0b11111101
 
     def serialize(self) -> bytes:
         if not self.fake:
             buf = bytearray()
-            ctrl_byte = 1
             buf.extend(struct.pack('>I', self.id))
             try:
-                s_salt, s_hash = self.password.split('$')
+                s_salt, s_hash = self.password_hash.split('$')
                 b_salt = base64.b64decode(s_salt + '==')
                 b_hash = base64.b64decode(s_hash + '=')
                 buf.extend(b_salt)
                 buf.extend(b_hash)
-                if self.token is None or len(self.token) != 16:
-                    buf.extend(os.urandom(10))
-                    self.has_token = False
-                    ctrl_byte &= 0b11111101
-                else:
-                    buf.extend(base64.b32decode(self.token.upper()))
+                if self.token is not None and len(self.token) != 16:
                     self.has_token = True
-                    ctrl_byte |= 0b00000010
-                buf.insert(0, ctrl_byte)
+                    buf.extend(base64.b32decode(self.token.upper()))
+                else:
+                    self.has_token = False
+                    buf.extend(os.urandom(10))
+                buf.insert(0, self._ctrl_byte)
                 return buf
             except Exception as e:
-                err_print(f'error in AccountVO.serialize: {e}\n')
+                err_print(f'error in LoginVO.serialize: {e}\n')
         return b'\x02' + os.urandom(16 + 32 + 10)  # 0b00000010 第二位代表token存在，第一位代表fake
 
     def deserialize(self, stream: bytes) -> bool:
@@ -86,19 +111,14 @@ class AccountVO:
             s = b'\x02' + os.urandom(16 + 32 + 10)
         else:
             s = stream
-        cb = s[0]
-        if cb & 1 == 1:
-            self.fake = False
-        else:
-            self.fake = True
-        if (cb >> 1) & 1 == 1:
-            self.has_token = True
-        else:
-            self.has_token = False
+        self._ctrl_byte = s[0]
         self.id = struct.unpack('>I', s[1:][:4])[0]
         b_salt = s[1:][4:][:16]
         b_hash = s[1:][4:][16:][:32]
-        self.password = (base64.b64encode(b_salt).decode() + '$' + base64.b64encode(b_hash).decode()).replace('=', '')
+        self.password_hash = '{}${}'.format(
+            base64.b64encode(b_salt).decode().replace('=', ''),
+            base64.b64encode(b_hash).decode().replace('=', ''),
+        )
         b_token = s[1:][4:][16:][32:]
         self.token = base64.b32encode(b_token).decode().lower()
         return result
@@ -110,30 +130,41 @@ class LoginUtil:
         return 0
 
     @staticmethod
-    async def step_1_query_account(db_session, code: str) -> AccountVO:
+    async def step_1_query_account(db_session, code: str) -> LoginVO:
+        """
+        数据库ID与是否存在TOKEN
+        """
         async with db_session.begin():
             stmt = select(
                 Account.db_id,
                 Account.password,
                 Account.token,
             ).where(Account.code == code)
-            result = await db_session.execute(stmt)
-            account = result.first()
-        a = AccountVO()
-        if account is None:
-            a.fake = True
+            cur = await db_session.execute(stmt)
+            result = cur.first()
+        a = LoginVO()
+        if result:
+            a.id, a.password, a.token = result
+            a.ctrl_token = a.token is not None and len(a.token) > 0
         else:
-            a.id = account[0]
-            a.password = account[1]
-            a.token = account[2]
-            a.has_token = a.token is not None and len(a.token) > 0
+            a.ctrl_fake = True
         return a
+
+    @staticmethod
+    async def step_3_verify_password(lvo: LoginVO) -> bool:
+        pass
+
+    @staticmethod
+    async def step_2_verify_token(lvo: LoginVO) -> bool:
+        pass
 
 
 @bp.route('/login.php', methods=['POST'])
 async def login(request: Request):
     """
     TODO: 校验图形验证码；
+    cookie 分成两部分，
+
     获取用户信息；
     如果不需要TOTP校验，则校验用户名密码；
     如果需要TOTP校验，将用户信息保存到cookie，跳转到TOTP页面。
@@ -150,7 +181,7 @@ async def login(request: Request):
     pwd = request.form.get('pass')
     avo = await LoginUtil.step_1_query_account(request.ctx.session, code)
     if not avo.fake:
-        if not avo.has_token and password_verify(avo.password, pwd):  # 直接比较密码
+        if not avo.ctrl_token and password_verify(avo.password_hash, pwd):  # 直接比较密码
             # 登录成功，设置jwt，显示提示页面。
             pass
         elif avo.has_token:
@@ -160,7 +191,7 @@ async def login(request: Request):
         # cookie中加密保存密码和avo，显示token页面
         pass
     res = response.text('aaa')
-    res.cookies[]
+    # res.cookies[]
     return response.text(str(request.form))
 
 

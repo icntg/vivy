@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 
@@ -7,6 +8,8 @@ class Constant:
     CONF: Path = BASE.joinpath('conf', 'config.yaml')
     STATIC: Path = BASE.joinpath('resource', 'static')
     TEMPLATE: Path = BASE.joinpath('resource', 'template')
+    TIME_FMT: str = '%Y-%m-%d %H:%M:%S'
+    TIME0: int = int(time.mktime(time.strptime('2022-01-01 00:00:00', TIME_FMT)))  # 默认应该就是国际标准时间？
 
     def __init__(self) -> None:
         pass
