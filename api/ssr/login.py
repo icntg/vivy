@@ -4,11 +4,19 @@
 
 
 """
+import base64
+import os
+import struct
+from typing import Tuple, Optional
 
 from sanic import Sanic, Blueprint, Request, response
+from sqlalchemy import select
 
 from .__ssr__ import jinja2_env
 from .. import Context, get_context
+from ..utility.external.functions import err_print
+from ..utility.external.pynacl_util import password_verify
+from ..v1.model.platform import Account
 
 ctx: Context = get_context()
 app: Sanic = Sanic.get_app()
@@ -38,19 +46,88 @@ async def register_page(_: Request):
     return response.html(template.render())
 
 
-class LoginUtil:
-    # @staticmethod
-    # async def find_account_by_code(code: str) -> Account:
-    #     session = ctx.DataSource.async_session()
-    #     with session.begin():
-    #         results = await session.execute(select(Account).where(Account.code==code))
-    #         data: Account = results.scalar()
-    #         return data
+class AccountVO:
+    def __init__(self) -> None:
+        self.fake: bool = False
+        self.id: int = 0
+        self.password: str = ''
+        self.has_token: bool = True
+        self.token: Optional[str] = None
 
+    def serialize(self) -> bytes:
+        if not self.fake:
+            buf = bytearray()
+            ctrl_byte = 1
+            buf.extend(struct.pack('>I', self.id))
+            try:
+                s_salt, s_hash = self.password.split('$')
+                b_salt = base64.b64decode(s_salt + '==')
+                b_hash = base64.b64decode(s_hash + '=')
+                buf.extend(b_salt)
+                buf.extend(b_hash)
+                if self.token is None or len(self.token) != 16:
+                    buf.extend(os.urandom(10))
+                    self.has_token = False
+                    ctrl_byte &= 0b11111101
+                else:
+                    buf.extend(base64.b32decode(self.token.upper()))
+                    self.has_token = True
+                    ctrl_byte |= 0b00000010
+                buf.insert(0, ctrl_byte)
+                return buf
+            except Exception as e:
+                err_print(f'error in AccountVO.serialize: {e}\n')
+        return b'\x02' + os.urandom(16 + 32 + 10)  # 0b00000010 第二位代表token存在，第一位代表fake
+
+    def deserialize(self, stream: bytes) -> bool:
+        result = True
+        if len(stream) != 16 + 32 + 10 + 1:
+            result = False
+            s = b'\x02' + os.urandom(16 + 32 + 10)
+        else:
+            s = stream
+        cb = s[0]
+        if cb & 1 == 1:
+            self.fake = False
+        else:
+            self.fake = True
+        if (cb >> 1) & 1 == 1:
+            self.has_token = True
+        else:
+            self.has_token = False
+        self.id = struct.unpack('>I', s[1:][:4])[0]
+        b_salt = s[1:][4:][:16]
+        b_hash = s[1:][4:][16:][:32]
+        self.password = (base64.b64encode(b_salt).decode() + '$' + base64.b64encode(b_hash).decode()).replace('=', '')
+        b_token = s[1:][4:][16:][32:]
+        self.token = base64.b32encode(b_token).decode().lower()
+        return result
+
+
+class LoginUtil:
     @staticmethod
     def verify_php_session_id(enc: str) -> int:
-
         return 0
+
+    @staticmethod
+    async def step_1_query_account(db_session, code: str) -> AccountVO:
+        async with db_session.begin():
+            stmt = select(
+                Account.db_id,
+                Account.password,
+                Account.token,
+            ).where(Account.code == code)
+            result = await db_session.execute(stmt)
+            account = result.first()
+        a = AccountVO()
+        if account is None:
+            a.fake = True
+        else:
+            a.id = account[0]
+            a.password = account[1]
+            a.token = account[2]
+            a.has_token = a.token is not None and len(a.token) > 0
+        return a
 
 
 @bp.route('/login.php', methods=['POST'])
@@ -69,8 +146,21 @@ async def login(request: Request):
     #     pass
     # if LoginUtil.verify_php_session_id(request.cookies[ctx.config.COOKIE]) <= 0:
     #     pass
-    print(request.form.get('code'))
-    print(request.form.get('pass1'))
+    code = request.form.get('code')
+    pwd = request.form.get('pass')
+    avo = await LoginUtil.step_1_query_account(request.ctx.session, code)
+    if not avo.fake:
+        if not avo.has_token and password_verify(avo.password, pwd):  # 直接比较密码
+            # 登录成功，设置jwt，显示提示页面。
+            pass
+        elif avo.has_token:
+            # cookie中加密保存密码和avo，显示token页面
+            pass
+    else:
+        # cookie中加密保存密码和avo，显示token页面
+        pass
+    res = response.text('aaa')
+    res.cookies[]
     return response.text(str(request.form))
 
 

@@ -1,6 +1,7 @@
 sanic>=22.3.2
 sanic-ext>=22.3.2
 sanic-jwt>=1.7.0
+sanic-security>=1.8.3
 sqlalchemy>=1.4.36
 aiomysql>=0.1.1
 pydantic>=1.9.1

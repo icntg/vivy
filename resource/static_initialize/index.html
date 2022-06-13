@@ -144,7 +144,7 @@
         step: 1,
         statusInit: {
             ing: 0,
-            msg: '正在初始化，请稍后',
+            msg: '正在初始化，请稍后...',
             log: '',
         },
         modelMysql: {
@@ -203,7 +203,7 @@
                     console.log(result)
                     data.statusInit.log = result['logs']
                     if (result['code'] === 0) {
-                        data.statusInit.msg = '初始化成功！'
+                        data.statusInit.msg = '初始化成功！请重启服务。'
                     } else {
                         data.statusInit.msg = result['message']
                     }

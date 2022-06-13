@@ -8,7 +8,7 @@ from typing import Union, Optional
 
 from .config import Config
 from .external import logger
-from .external.async_sqlalchemy import AsyncSQLAlchemy
+from api.utility.data.async_sqlalchemy import AsyncSQLAlchemy
 from .external.functions import err_print
 
 

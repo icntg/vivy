@@ -12,7 +12,6 @@ from typing import Dict, Optional
 from urllib.parse import quote
 
 import aiomysql
-import nacl.pwhash
 from sanic import Request, response
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -20,9 +19,10 @@ from sqlalchemy.orm import sessionmaker
 
 from api.utility.config import Config
 from api.utility.constant import Constant
-from api.utility.external.data_source import MySQL
+from api.utility.data.data_source import MySQL
 from api.utility.external.functions import object_id
 from api.utility.external.google_token import generate_token_and_qrcode
+from api.utility.external.pynacl_util import password_hash
 
 STATIC = Path(Constant.BASE).joinpath('resource', 'static_initialize')
 CONF = Path(Constant.BASE).joinpath('conf')
@@ -153,7 +153,7 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         admin.id = object_id()
         admin.code = u['loginName']
         admin.login_name = u['loginName']
-        admin.password = nacl.pwhash.str(u['password'].encode()).decode()
+        admin.password = password_hash(u['password'])
         admin.token = u['token'].replace(' ', '')
         admin.comment = '系统管理员'
         admin.name = '系统管理员'
@@ -213,7 +213,7 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
                 username=username,
                 password=password,
                 database=m['database'],
-                option='?parseTime=true&charset=utf8mb4&loc=Local',
+                option='?charset=utf8mb4',
                 maxIdle=10,
                 maxOpen=100,
                 showSql=False,

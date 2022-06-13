@@ -22,7 +22,7 @@ class MySQL(DataSource):
     def __init__(self, cfg: Optional[Dict] = None):
         super().__init__(cfg)
         self.database = ''
-        self.option = '?parseTime=true&charset=utf8mb4&loc=Local'
+        self.option = '?charset=utf8mb4'
         self.max_idle = 10
         self.max_open = 100
         self.show_sql = False

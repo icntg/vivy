@@ -32,3 +32,7 @@ def generate_token_and_qrcode(service_name: str, account: str, issuer: str) -> T
     token_show = ' '.join([token[i: i + 4] for i in range(0, len(token), 4)])
     qr_img = 'data:image/png;base64,' + base64.b64encode(make_qrcode(token, service_name, account, issuer)).decode()
     return token_show, qr_img
+
+
+def verify(b32secret: str, num6: str) -> bool:
+    pass
