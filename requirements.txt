@@ -1,7 +1,5 @@
 sanic>=22.3.2
 sanic-ext>=22.3.2
-sanic-jwt>=1.7.0
-sanic-security>=1.8.3
 sqlalchemy>=1.4.36
 aiomysql>=0.1.1
 pydantic>=1.9.1
@@ -9,3 +7,4 @@ Jinja2>=3.1.2
 PyNaCl>=1.5.0
 Pillow>=9.1.1
 qrcode>=7.3.1
+captcha>=0.4

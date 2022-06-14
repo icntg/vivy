@@ -23,11 +23,11 @@ class AsyncSQLAlchemy:
 
         @app.middleware("request")
         async def inject_session(request):
-            request.ctx.session = sessionmaker(self.engine, AsyncSession, expire_on_commit=False)()
-            request.ctx.session_ctx_token = self.base_model_session_ctx.set(request.ctx.session)
+            request.ctx.db_session = sessionmaker(self.engine, AsyncSession, expire_on_commit=False)()
+            request.ctx.session_ctx_token = self.base_model_session_ctx.set(request.ctx.db_session)
 
         @app.middleware("response")
         async def close_session(request, response):
             if hasattr(request.ctx, "session_ctx_token"):
                 self.base_model_session_ctx.reset(request.ctx.session_ctx_token)
-                await request.ctx.session.close()
+                await request.ctx.db_session.close()

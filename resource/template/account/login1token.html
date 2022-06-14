@@ -1,12 +1,12 @@
 {% extends "__base__/__frame__.html" %}
-{% block title %}认证码{% endblock %}
+{% block title %}验证{% endblock %}
 {% block body %}
     <div class="box">
-        <h2>认证码</h2>
+        <h2>谷歌TOTP验证码</h2>
         <form>
             <div class="input-box">
-                <input type="text" id="auth" name="auth" required="required"/>
-                <label for="auth">认证码</label>
+                <input type="text" id="auth" name="auth" required="required" title="六位数字"/>
+                <label for="auth">验证码</label>
             </div>
             <input type="submit" name="submit" value="继续"/>
         </form>

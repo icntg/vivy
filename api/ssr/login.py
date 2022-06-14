@@ -6,6 +6,8 @@
 """
 import base64
 import os
+import pickle
+import random
 import struct
 import time
 from typing import Optional, Union
@@ -14,7 +16,7 @@ from urllib.parse import urlparse
 from sanic import Sanic, Blueprint, Request, response, HTTPResponse
 from sqlalchemy import select
 
-from .__ssr__ import jinja2_env
+from .__ssr__ import jinja2_env, render
 from .. import Context, get_context
 from ..utility.captcha import get_captcha
 from ..utility.constant import Constant
@@ -33,42 +35,48 @@ bp: Blueprint = Blueprint('account', 'account')
 async def login_with_code_page(_: Request):
     """
     使用账号、密码登录
-    使用图形验证码，并将校验信息加密后保存到cookie中。
     """
-    cap, url = get_captcha()
-    now = struct.pack('>I', int(time.time()) - Constant.TIME0)
-    enc_cap = base64.urlsafe_b64encode(encrypt(ctx.secret, now + cap.encode())).decode()
-    template = jinja2_env.get_template('account/login0code.html')
-    res = response.html(template.render(url=url))
-    res.cookies['c'] = enc_cap
-    res.cookies['c']['httponly'] = True
-    res.cookies['c']['samesite'] = 'Strict'
-    return res
+    return response.html(render('account/login0code.html'))
 
 
 @bp.route('/login-with-portal.html')
 async def login_with_portal_page(_: Request):
-    template = jinja2_env.get_template('account/login0portal.html')
-    return response.html(template.render())
+    return response.html(render('account/login0portal.html'))
 
 
 @bp.route('/register.html')
 async def register_page(_: Request):
-    template = jinja2_env.get_template('account/register.html')
-    return response.html(template.render())
+    return response.html(render('account/register.html'))
 
 
 class LoginVO:
     def __init__(self) -> None:
-        self.timestamp: int = int(time.time() - Constant.TIME0)  # 时间戳，为了范围更加合理，从2022年1月1日开始计时的秒数。
-        self.form_password: str = ''
+        self.form_user: str = ''
+        self.form_pass: str = ''
         self.form_token: str = ''
+        self.form_captcha: str = ''
 
         self._ctrl_byte: int = 0
-        self.id: int = 0
-        self.password_hash: str = ''
-        self.token: Optional[str] = None
-        self.captcha: Optional[str] = None  # TODO: 图形校验码暂时未启用。
+        self.db_id: int = 0
+        self.db_password_hash: str = ''
+        self.db_token: Optional[str] = None
+
+    def init_with_account(self, db_id: int, ph: str, token: Optional[str]):
+        self.fake = False
+        self.db_id = db_id
+        self.db_password_hash = ph
+        self.db_token = token
+        self.has_token = self.db_token is not None and len(self.db_token) > 0
+
+    def init_fake(self):
+        self.fake = True
+        self.db_id = struct.unpack('>I', os.urandom(4))[0]
+        self.db_password_hash = '{}${}'.format(
+            base64.b64encode(os.urandom(16)).decode().replace('=', ''),
+            base64.b64encode(os.urandom(32)).decode().replace('=', ''),
+        )
+        self.db_token = base64.b32encode(os.urandom(10)).decode().lower()
+        self.has_token = True
 
     @property
     def fake(self) -> bool:
@@ -92,55 +100,27 @@ class LoginVO:
         else:
             self._ctrl_byte &= 0b11111101
 
-    def serialize(self) -> bytes:
-        if not self.fake:
-            buf = bytearray()
-            buf.extend(struct.pack('>I', self.id))
-            try:
-                s_salt, s_hash = self.password_hash.split('$')
-                b_salt = base64.b64decode(s_salt + '==')
-                b_hash = base64.b64decode(s_hash + '=')
-                buf.extend(b_salt)
-                buf.extend(b_hash)
-                if self.token is not None and len(self.token) != 16:
-                    self.has_token = True
-                    buf.extend(base64.b32decode(self.token.upper()))
-                else:
-                    self.has_token = False
-                    buf.extend(os.urandom(10))
-                buf.insert(0, self._ctrl_byte)
-                return buf
-            except Exception as e:
-                err_print(f'error in LoginVO.serialize: {e}\n')
-        return b'\x02' + os.urandom(16 + 32 + 10)  # 0b00000010 第二位代表token存在，第一位代表fake
-
-    def deserialize(self, stream: bytes) -> bool:
-        result = True
-        if len(stream) != 16 + 32 + 10 + 1:
-            result = False
-            s = b'\x02' + os.urandom(16 + 32 + 10)
-        else:
-            s = stream
-        self._ctrl_byte = s[0]
-        self.id = struct.unpack('>I', s[1:][:4])[0]
-        b_salt = s[1:][4:][:16]
-        b_hash = s[1:][4:][16:][:32]
-        self.password_hash = '{}${}'.format(
-            base64.b64encode(b_salt).decode().replace('=', ''),
-            base64.b64encode(b_hash).decode().replace('=', ''),
-        )
-        b_token = s[1:][4:][16:][32:]
-        self.token = base64.b32encode(b_token).decode().lower()
-        return result
-
 
 class LoginUtil:
     @staticmethod
-    def verify_php_session_id(enc: str) -> int:
-        return 0
+    def random_code(code: str) -> int:
+        c = code.encode()
+        n = int.from_bytes(c, 'big', signed=False)
+        random.seed(n)
+        return random.randint(0, 65536)
 
     @staticmethod
-    def step_0_verify_captcha(request: Request) -> Optional[Exception]:
+    def render_captcha_page(req: Request) -> HTTPResponse:
+        cap, url = get_captcha()
+        req.ctx.web_session['captcha'] = cap
+        return response.html(render('account/login1captcha.html', url=url))
+
+    @staticmethod
+    def render_token_page() -> HTTPResponse:
+        return response.html(render('account/login1token.html'))
+
+    @staticmethod
+    def step_1_verify_captcha(request: Request) -> Optional[Exception]:
         capt = request.form.get('capt').lower()
         c = request.cookies['c']
         c = base64.urlsafe_b64decode(c)
@@ -153,7 +133,7 @@ class LoginUtil:
             return CaptchaError('captcha verify failed')
 
     @staticmethod
-    async def step_1_query_account(db_session, code: str) -> LoginVO:
+    async def step_0_query_account(db_session, code: str) -> LoginVO:
         """
         数据库ID与是否存在TOKEN
         """
@@ -167,10 +147,10 @@ class LoginUtil:
             result = cur.first()
         a = LoginVO()
         if result:
-            a.id, a.password, a.token = result
-            a.ctrl_token = a.token is not None and len(a.token) > 0
+            db_id, ph, token = result
+            a.init_with_account(db_id, ph, token)
         else:
-            a.ctrl_fake = True
+            a.init_fake()
         return a
 
     @staticmethod
@@ -196,17 +176,37 @@ async def login(request: Request):
     referer = request.headers['referer']
     parsed = urlparse(referer)
     _login_with_code_url = '/account/login-with-code.html'
-    if parsed.path == _login_with_code_url:
-        ret = LoginUtil.step_0_verify_captcha(request)
-        if ret is not None:
-            template = jinja2_env.get_template('message/uni-message.html')
-            return response.html(template.render(
-                title='错误',
-                panel_title='错误',
-                panel_message='验证码错误',
-                back_url=_login_with_code_url,
-            ))
-        # TODO: 获取验证信息
+    if parsed.path in {_login_with_code_url, '/account/login.html'}:
+        # 使用用户名密码登陆
+        username = request.form.get('code')
+        password = request.form.get('pass')
+        lvo = await LoginUtil.step_0_query_account(request.ctx.db_session, username)
+        lvo.form_user = username
+        lvo.form_pass = password
+        request.ctx.web_session['login'] = base64.b64encode(pickle.dumps(lvo)).decode()
+        if lvo.fake:  # 未查到用户，根据用户名随机使用校验方式。
+            if LoginUtil.random_code(username) % 2 == 0:
+                return LoginUtil.render_captcha_page(request)
+            else:
+                return LoginUtil.render_token_page()
+        elif lvo.has_token:
+            return LoginUtil.render_token_page()
+        else:
+            return LoginUtil.render_captcha_page(request)
+    elif parsed.path == '/account/login.php':
+        pass
+
+        #
+        # ret = LoginUtil.step_0_verify_captcha(request)
+        # if ret is not None:
+        #     template = jinja2_env.get_template('message/uni-message.html')
+        #     return response.html(template.render(
+        #         title='错误',
+        #         panel_title='错误',
+        #         panel_message='验证码错误',
+        #         back_url=_login_with_code_url,
+        #     ))
+        # # TODO: 获取验证信息
     return response.text(parsed.path)
     #
     # return response.json(request.headers)
