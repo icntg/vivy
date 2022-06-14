@@ -63,9 +63,15 @@ body{
     color:#03a9f4;
     font-size:14px;
 }
+
+.box .input-box img {
+    padding-top: 0;
+    padding-bottom: 20px;
+}
+
 .box input[type="submit"]
 {
-    background: transparent;
+    /*background: transparent;*/
     border:none;
     outline:none;
     font-size: 16px;

@@ -1,11 +1,9 @@
 {% extends "__base__/__frame__.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block body %}
-    <div class="content">
-        <div class="panel">
-            <h1>{{ panel_title }}</h1>
-            <p>{{ panel_message }}</p>
-        </div>
-        <a class="primary" href="javascript:history.go(-1);">返回</a>
+    <div class="box">
+        <h2>{{ panel_title }}</h2>
+        <p>{{ panel_message }}</p>
+        <a class="primary" href="{{ back_url }}">OK</a>
     </div>
 {% endblock %}

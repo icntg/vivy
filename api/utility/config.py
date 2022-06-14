@@ -123,10 +123,12 @@ class Config(Constant, AbstractConfig):
             if not Path(filename).is_absolute():
                 filename = str(Path(self.BASE).joinpath('conf', filename))
             cfg = yaml.load(open(filename, 'r', encoding='utf-8').read(), Loader=yaml.Loader)
+            self.HTTP.use_default_values()
             if 'HTTP' in cfg and 'HOST' in cfg['HTTP']:
                 self.HTTP.__dict__['HOST'] = cfg['HTTP']['HOST']
             if 'HTTP' in cfg and 'PORT' in cfg['HTTP']:
                 self.HTTP.__dict__['PORT'] = cfg['HTTP']['PORT']
+            self.SESSION.use_default_values()
             if 'SESSION' in cfg and 'SECRET_HEX' in cfg['SESSION']:
                 self.SESSION.__dict__['SECRET_HEX'] = cfg['SESSION']['SECRET_HEX']
             if 'SETTING' in cfg and 'LOGGER_DIRECTORY' in cfg['SETTING']:

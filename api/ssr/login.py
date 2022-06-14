@@ -8,16 +8,19 @@ import base64
 import os
 import struct
 import time
-from typing import Optional
+from typing import Optional, Union
+from urllib.parse import urlparse
 
-from sanic import Sanic, Blueprint, Request, response
+from sanic import Sanic, Blueprint, Request, response, HTTPResponse
 from sqlalchemy import select
 
 from .__ssr__ import jinja2_env
 from .. import Context, get_context
+from ..utility.captcha import get_captcha
 from ..utility.constant import Constant
+from ..utility.error import CaptchaError
 from ..utility.external.functions import err_print
-from ..utility.external.pynacl_util import password_verify
+from ..utility.external.pynacl_util import password_verify, encrypt, decrypt
 from ..v1.model.platform import Account
 
 ctx: Context = get_context()
@@ -30,10 +33,17 @@ bp: Blueprint = Blueprint('account', 'account')
 async def login_with_code_page(_: Request):
     """
     使用账号、密码登录
-    TODO: 获取图形验证码，并将校验信息加密后保存到cookie中。
+    使用图形验证码，并将校验信息加密后保存到cookie中。
     """
+    cap, url = get_captcha()
+    now = struct.pack('>I', int(time.time()) - Constant.TIME0)
+    enc_cap = base64.urlsafe_b64encode(encrypt(ctx.secret, now + cap.encode())).decode()
     template = jinja2_env.get_template('account/login0code.html')
-    return response.html(template.render())
+    res = response.html(template.render(url=url))
+    res.cookies['c'] = enc_cap
+    res.cookies['c']['httponly'] = True
+    res.cookies['c']['samesite'] = 'Strict'
+    return res
 
 
 @bp.route('/login-with-portal.html')
@@ -50,7 +60,7 @@ async def register_page(_: Request):
 
 class LoginVO:
     def __init__(self) -> None:
-        self.timestamp: int = int(time.gmtime() - Constant.TIME0)  # 时间戳，为了范围更加合理，从2022年1月1日开始计时的秒数。
+        self.timestamp: int = int(time.time() - Constant.TIME0)  # 时间戳，为了范围更加合理，从2022年1月1日开始计时的秒数。
         self.form_password: str = ''
         self.form_token: str = ''
 
@@ -130,6 +140,19 @@ class LoginUtil:
         return 0
 
     @staticmethod
+    def step_0_verify_captcha(request: Request) -> Optional[Exception]:
+        capt = request.form.get('capt').lower()
+        c = request.cookies['c']
+        c = base64.urlsafe_b64decode(c)
+        c = decrypt(ctx.secret, c)
+        t = struct.unpack('>I', c[:4])[0]
+        if t - time.time() + Constant.TIME0 > ctx.config.SESSION.LOGIN_COOKIE_TIMEOUT:
+            return TimeoutError('captcha timeout')
+        c = c[4:].decode().lower()
+        if capt != c:
+            return CaptchaError('captcha verify failed')
+
+    @staticmethod
     async def step_1_query_account(db_session, code: str) -> LoginVO:
         """
         数据库ID与是否存在TOKEN
@@ -162,37 +185,56 @@ class LoginUtil:
 @bp.route('/login.php', methods=['POST'])
 async def login(request: Request):
     """
-    TODO: 校验图形验证码；
+    校验图形验证码；
     cookie 分成两部分，
 
     获取用户信息；
     如果不需要TOTP校验，则校验用户名密码；
     如果需要TOTP校验，将用户信息保存到cookie，跳转到TOTP页面。
     """
-    cn = ctx.config.SESSION.COOKIE
-    if cn in request.cookies and LoginUtil.verify_php_session_id(request.cookies[cn]) > 0:
-        return response.redirect('/')  # 已登录
 
-    # if ctx.config.COOKIE in request.cookies:
+    referer = request.headers['referer']
+    parsed = urlparse(referer)
+    _login_with_code_url = '/account/login-with-code.html'
+    if parsed.path == _login_with_code_url:
+        ret = LoginUtil.step_0_verify_captcha(request)
+        if ret is not None:
+            template = jinja2_env.get_template('message/uni-message.html')
+            return response.html(template.render(
+                title='错误',
+                panel_title='错误',
+                panel_message='验证码错误',
+                back_url=_login_with_code_url,
+            ))
+        # TODO: 获取验证信息
+    return response.text(parsed.path)
+    #
+    # return response.json(request.headers)
+    #
+    # cn = ctx.config.SESSION.COOKIE
+    # if cn in request.cookies and LoginUtil.verify_php_session_id(request.cookies[cn]) > 0:
+    #     return response.redirect('/')  # 已登录
+    #
+    # # if ctx.config.COOKIE in request.cookies:
+    # #     pass
+    # # if LoginUtil.verify_php_session_id(request.cookies[ctx.config.COOKIE]) <= 0:
+    # #     pass
+    # code = request.form.get('code')
+    # pwd = request.form.get('pass')
+    # avo = await LoginUtil.step_1_query_account(request.ctx.session, code)
+    # if not avo.fake:
+    #     if not avo.ctrl_token and password_verify(avo.password_hash, pwd):  # 直接比较密码
+    #         # 登录成功，设置jwt，显示提示页面。
+    #         pass
+    #     elif avo.has_token:
+    #         # cookie中加密保存密码和avo，显示token页面
+    #         pass
+    # else:
+    #     # cookie中加密保存密码和avo，显示token页面
     #     pass
-    # if LoginUtil.verify_php_session_id(request.cookies[ctx.config.COOKIE]) <= 0:
-    #     pass
-    code = request.form.get('code')
-    pwd = request.form.get('pass')
-    avo = await LoginUtil.step_1_query_account(request.ctx.session, code)
-    if not avo.fake:
-        if not avo.ctrl_token and password_verify(avo.password_hash, pwd):  # 直接比较密码
-            # 登录成功，设置jwt，显示提示页面。
-            pass
-        elif avo.has_token:
-            # cookie中加密保存密码和avo，显示token页面
-            pass
-    else:
-        # cookie中加密保存密码和avo，显示token页面
-        pass
-    res = response.text('aaa')
-    # res.cookies[]
-    return response.text(str(request.form))
+    # res = response.text('aaa')
+    # # res.cookies[]
+    # return response.text(str(request.form))
 
 
 def login_with_auth_code(_: Request):
