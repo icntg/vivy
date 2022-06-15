@@ -9,6 +9,7 @@ XSalsa20 stream cipher / Poly1305 MAC
 import nacl.secret
 import nacl.pwhash
 
+
 def encrypt(key: bytes, plain: bytes) -> bytes:
     box = nacl.secret.SecretBox(key)
     return box.encrypt(plain)
@@ -28,4 +29,9 @@ def password_hash(password: str) -> str:
 
 def password_verify(pwd_hash: str, password: str) -> bool:
     h = (PREFIX + pwd_hash).encode()
-    return nacl.pwhash.verify(h, password.encode())
+    try:
+        nacl.pwhash.verify(h, password.encode())
+        return True
+    except Exception as e:
+        _ = e
+        return False

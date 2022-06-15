@@ -1,9 +1,10 @@
+import asyncio_redis
 from sanic import Sanic, response
 from sanic.handlers import ErrorHandler
 from sanic_ext import Extend
 
 from api.utility.context import Context, get_context
-
+from api.utility.session import RedisSessionInterface
 
 
 def enum_blueprints(path: str = './v1'):
@@ -21,7 +22,20 @@ class CustomErrorHandler(ErrorHandler):
         '''.strip())
 
 
-# app.error_handler = CustomErrorHandler()
+class Redis:
+    """
+    A simple wrapper class that allows you to share a connection
+    pool across your application.
+    """
+    _pool = None
+
+    async def get_redis_pool(self):
+        if not self._pool:
+            self._pool = await asyncio_redis.Pool.create(
+                host='localhost', port=6379, poolsize=10
+            )
+
+        return self._pool
 
 
 def create_app() -> Sanic:
@@ -30,7 +44,15 @@ def create_app() -> Sanic:
 
     from api.utility.session import Session, InMemorySessionInterface
     from api.utility.session.base import mock_php_sid_provider
-    session_instance = InMemorySessionInterface(
+
+    # session_instance = InMemorySessionInterface(
+    #     expiry=ctx.config.SESSION.SESSION_TIMEOUT,
+    #     cookie_name=ctx.config.SESSION.COOKIE,
+    #     session_name='web_session',
+    # )
+    redis = Redis()
+    session_instance = RedisSessionInterface(
+        redis.get_redis_pool,
         expiry=ctx.config.SESSION.SESSION_TIMEOUT,
         cookie_name=ctx.config.SESSION.COOKIE,
         session_name='web_session',

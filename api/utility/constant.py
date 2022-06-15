@@ -12,6 +12,9 @@ class Constant:
     # 默认应该就是国际标准时间？
     TIME0: int = int(time.mktime(time.strptime('2022-01-01 00:00:00 UTC', '%Y-%m-%d %H:%M:%S %Z')))
 
+    SESSION_NAME_LOGIN: str = 'SessionNameLogin'
+    SESSION_NAME_CURRENT_ACCOUNT: str = 'SessionNameCurrentAccount'
+
     def __init__(self) -> None:
         pass
 

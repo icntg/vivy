@@ -1,6 +1,11 @@
 import base64
+import hashlib
+import hmac
 import io
 import secrets
+import struct
+import time
+
 import qrcode
 from typing import Tuple
 
@@ -34,5 +39,13 @@ def generate_token_and_qrcode(service_name: str, account: str, issuer: str) -> T
     return token_show, qr_img
 
 
-def verify(b32secret: str, num6: str) -> bool:
-    pass
+def _h_otp_token(secret, intervals_no) -> str:
+    key = base64.b32decode(secret, True)
+    msg = struct.pack(">Q", intervals_no)
+    h = hmac.new(key, msg, hashlib.sha1).digest()
+    o = h[19] & 15
+    h = (struct.unpack(">I", h[o:o+4])[0] & 0x7fffffff) % 1000000
+    return "{}".format(h).rjust(6, '0')
+
+def get_totp_token(secret):
+    return _h_otp_token(secret, intervals_no=int(time.time())//30)
