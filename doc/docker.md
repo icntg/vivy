@@ -14,3 +14,10 @@ docker run --name mysql --rm -d -i -p3306:3306 \
 -v /home/data/mysql/data:/var/lib/mysql \
 -e MYSQL_ROOT_PASSWORD=root mariadb
 ```
+
+# Redis
+
+```bash
+docker run --name redis --rm -d -i -p127.0.0.1:6379:6379 \
+-v /home/data/redis:/data redis
+```
