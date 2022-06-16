@@ -31,9 +31,7 @@ bp: Blueprint = Blueprint('account', 'account')
 @bp.route('/login-with-code.html')
 @bp.route('/login.html')
 async def login_with_code_page(_: Request):
-    """
-    使用账号、密码登录
-    """
+    """ 使用账号、密码登录 """
     return response.html(render('account/login0code.html'))
 
 
@@ -104,6 +102,9 @@ class LoginVO:
 class LoginUtil:
     @staticmethod
     def random_code(code: str) -> int:
+        """ 根据username产生固定的随机数
+        TODO: 非法用户名使用图形验证，正常用户名一定概率采用TOTP验证
+        """
         c = code.encode()
         n = int.from_bytes(c, 'big', signed=False)
         random.seed(n)
