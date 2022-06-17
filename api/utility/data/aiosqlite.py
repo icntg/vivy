@@ -1,7 +1,6 @@
 import functools
 import sqlite3
-from asyncio import AbstractEventLoop, get_event_loop, Future
-from concurrent.futures import Executor, ThreadPoolExecutor
+from asyncio import AbstractEventLoop, get_event_loop, Queue
 from enum import Enum
 from multiprocessing.dummy import Process
 from queue import Queue
@@ -58,9 +57,7 @@ class _SQLiteThread(Process):
         self.filename: str = filename
         self.autocommit: bool = autocommit
         self.journal_mode: str = journal_mode
-        # use request queue of unlimited size
-        self.reqs: Queue[_SQLiteQuery] = Queue()
-        # self.setDaemon(True)  # python2.5-compatible
+        self.reqs: Queue[_SQLiteQuery] = Queue(maxsize=8)
         self.start()
 
     def run(self):
@@ -72,6 +69,7 @@ class _SQLiteThread(Process):
         conn.text_factory = str
         cursor = conn.cursor()
         cursor.execute('PRAGMA synchronous=OFF')
+
         while 1:
             query: _SQLiteQuery = self.reqs.get()
             if query.cmd == _Command.Close:
@@ -97,6 +95,9 @@ class _SQLiteThread(Process):
                             query.res.put(rec)
                         query.res.put(_Command.NoMore)
         conn.close()
+
+    async def _loop(self):
+        pass
 
     def execute(self, req: str, arg: Optional[Tuple] = None) -> CursorState:
         query = _SQLiteQuery(_Command.Execute, req, arg, Queue())
