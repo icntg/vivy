@@ -1,108 +1,25 @@
-import { mapTwoLevelRouter } from '@/utils'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import HomeView from '../views/HomeView.vue'
 
-const Layout = () => import('@/components/Layout.vue')
-
-export const constantRoutes = [
-  {
-    path: '/login',
-    name: 'Login',
-    hidden: true,
-    component: () => import('@/views/login/index.vue'),
-  },
+const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/index/home',
-    hidden: true,
+    name: 'home',
+    component: HomeView
   },
   {
-    path: '/redirect',
-    component: Layout,
-    hidden: true,
-    meta: {
-      noShowTabbar: true,
-    },
-    children: [
-      {
-        path: '/redirect/:path(.*)*',
-        component: (): any => import('@/views/redirect/index.vue'),
-      },
-    ],
-  },
-  {
-    path: '/personal',
-    name: 'personal',
-    component: Layout,
-    hidden: true,
-    meta: {
-      title: '个人中心',
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/personal/index.vue'),
-        meta: {
-          title: '个人中心',
-        },
-      },
-    ],
-  },
-  {
-    path: '/index',
-    component: Layout,
-    name: 'Index',
-    meta: {
-      title: 'Dashboard',
-      iconPrefix: 'iconfont',
-      icon: 'dashboard',
-    },
-    children: [
-      {
-        path: 'home',
-        name: 'Home',
-        component: (): any => import('@/views/index/main.vue'),
-        meta: {
-          title: '主控台',
-          affix: true,
-          cacheable: true,
-          iconPrefix: 'iconfont',
-          icon: 'menu',
-        },
-      },
-      {
-        path: 'work-place',
-        name: 'WorkPlace',
-        component: (): any => import('@/views/index/work-place.vue'),
-        meta: {
-          title: '工作台',
-          iconPrefix: 'iconfont',
-          icon: 'menu',
-        },
-      },
-    ],
-  },
-  {
-    path: '/404',
-    name: '404',
-    hidden: true,
-    component: () => import('@/views/exception/404.vue'),
-  },
-  {
-    path: '/500',
-    name: '500',
-    hidden: true,
-    component: () => import('@/views/exception/500.vue'),
-  },
-  {
-    path: '/403',
-    name: '403',
-    hidden: true,
-    component: () => import('@/views/exception/403.vue'),
-  },
+    path: '/about',
+    name: 'about',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+  }
 ]
+
 const router = createRouter({
-  history: createWebHashHistory(),
-  routes: mapTwoLevelRouter(constantRoutes),
+  history: createWebHistory(process.env.BASE_URL),
+  routes
 })
 
 export default router

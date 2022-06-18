@@ -26,6 +26,7 @@ shims-vue.d.ts
 node_modules
 /dist
 /web/dist
+*.lock
 
 # local env files
 .env.local

@@ -1,10 +1,9 @@
-import asyncio_redis
+import aioredis
 from sanic import Sanic, response
 from sanic.handlers import ErrorHandler
 from sanic_ext import Extend
 
 from api.utility.context import Context, get_context
-from api.utility.session import RedisSessionInterface
 
 
 def enum_blueprints(path: str = './v1'):
@@ -22,43 +21,27 @@ class CustomErrorHandler(ErrorHandler):
         '''.strip())
 
 
-class Redis:
-    """
-    A simple wrapper class that allows you to share a connection
-    pool across your application.
-    """
-    _pool = None
-
-    async def get_redis_pool(self):
-        if not self._pool:
-            self._pool = await asyncio_redis.Pool.create(
-                host='localhost', port=6379, poolsize=10
-            )
-
-        return self._pool
-
 def create_app() -> Sanic:
     ctx: Context = get_context()
     app = Sanic(name='VIVY', ctx=ctx)
 
-    from api.utility.session import Session, InMemorySessionInterface
+    from api.utility.session import Session, AIORedisSessionInterface, PHP_PROVIDER
+    session = Session()
 
-    # session_instance = InMemorySessionInterface(
-    #     expiry=ctx.config.SESSION.SESSION_TIMEOUT,
-    #     cookie_name=ctx.config.SESSION.COOKIE,
-    #     session_name='web_session',
-    # )
-    redis = Redis()
-    session_instance = RedisSessionInterface(
-        redis.get_redis_pool,
-        expiry=ctx.config.SESSION.SESSION_TIMEOUT,
-        cookie_name=ctx.config.SESSION.COOKIE,
-        session_name='web_session',
-    )
-    session_instance.sid_provider = mock_php_sid_provider
-    session_instance.__dict__['sid_provider'] = mock_php_sid_provider
+    @app.listener('before_server_start')
+    async def aioredis_server_init(app, loop):
+        app.ctx.redis = aioredis.from_url('redis://localhost', decode_responses=True)
+        # init extensions fabrics
+        session_instance = AIORedisSessionInterface(
+            app.ctx.redis,
+            expiry=ctx.config.SESSION.SESSION_TIMEOUT,
+            cookie_name=ctx.config.SESSION.COOKIE,
+            session_name='web_session',
+        )
+        session_instance.sid_provider = PHP_PROVIDER
+        session_instance.__dict__['sid_provider'] = PHP_PROVIDER
+        session.init_app(app, interface=session_instance)
 
-    Session(app, interface=session_instance)  # 临时使用内存Session
 
     ctx.DataSource.init_middleware()
 
@@ -69,7 +52,9 @@ def create_app() -> Sanic:
 
     # from api.controller.v1 import checkin
 
-    app.static('/', ctx.config.STATIC)
+    app.static('/favicon.ico', ctx.config.STATIC.joinpath('favicon.ico'))
+    app.static('/css/style.css', ctx.config.STATIC.joinpath('css', 'style.css'))
+    app.static('/', ctx.config.BASE.joinpath('web', 'dist'))
     import api.ssr.index
     import api.ssr.login
     app.blueprint(api.ssr.login.bp)

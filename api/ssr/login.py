@@ -8,6 +8,7 @@ import base64
 import os
 import random
 import secrets
+import string
 import struct
 from typing import Optional, Tuple
 from urllib.parse import urlparse
@@ -102,9 +103,7 @@ class LoginVO:
 class LoginUtil:
     @staticmethod
     def random_code(code: str) -> int:
-        """ 根据username产生固定的随机数
-        TODO: 非法用户名使用图形验证，正常用户名一定概率采用TOTP验证
-        """
+        """ 根据username产生固定的随机数 """
         c = code.encode()
         n = int.from_bytes(c, 'big', signed=False)
         random.seed(n)
@@ -141,10 +140,13 @@ class LoginUtil:
         lvo.form_user = username
         lvo.form_pass = password
         if lvo.fake:  # 未查到用户，根据用户名随机使用校验方式。
-            if LoginUtil.random_code(username) % 2 == 0:
+            if not LoginUtil.is_username_legal(username):
                 next_action = 0
             else:
-                next_action = 1
+                if LoginUtil.random_code(username) % 10 == 0:  # 合法用户名的话，有1/10的概率需要TOTP验证。
+                    next_action = 1
+                else:
+                    next_action = 0
         elif lvo.has_token:  # 用户存在，而且需要TOTP验证
             next_action = 1
         else:  # 用户存在，无需TOTP验证。进行图形人机验证。
@@ -216,19 +218,20 @@ class LoginUtil:
         return lvo.db_id, response.html(render(
             'message/uni-message.html',
             title='welcome',
-            panel_title=f'欢迎，{lvo.form_user}！',
+            panel_title=f'欢迎你，{lvo.form_user}！',
             panel_message='登录成功，请继续。',
             back_url='/',
         ))
 
     @staticmethod
-    async def step_3_query_account(request: Request, uid: int) -> Account:
-        db_session = request.ctx.db_session
-        async with db_session.begin():
-            stmt = select(Account).where(Account.db_id == uid)
-            cur = await db_session.execute(stmt)
-            result = cur.first()
-        return result
+    def is_username_legal(login_name: str) -> bool:
+        if len(login_name) < 4 or len(login_name) > 20:
+            return False
+        s = set(string.digits + string.ascii_lowercase + '_')
+        ls = set(login_name.lower())
+        if len(ls.difference(s)) > 0:
+            return False
+        return True
 
 
 @bp.route('/login.php', methods=['POST'])

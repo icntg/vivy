@@ -23,4 +23,5 @@ async def index(request: Request):
     #     write secure log
     #     return response.redirect('/account/login.html')
     else:
-        return response.text('登录成功')
+        with open(Constant.BASE.joinpath('web', 'dist', 'index.html'), 'rb') as f:
+            return response.html(f.read())

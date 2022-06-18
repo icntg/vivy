@@ -1,16 +1,18 @@
-from .memcache import MemcacheSessionInterface
-from .redis import RedisSessionInterface
-from .memory import InMemorySessionInterface
-from .mongodb import MongoDBSessionInterface
+# from .memcache import MemcacheSessionInterface
+# from .redis import RedisSessionInterface
+# from .mongodb import MongoDBSessionInterface
 from .aioredis import AIORedisSessionInterface
+from .memory import InMemorySessionInterface
 
 __all__ = (
-    "MemcacheSessionInterface",
-    "RedisSessionInterface",
+    # "MemcacheSessionInterface",
+    # "RedisSessionInterface",
     "InMemorySessionInterface",
-    "MongoDBSessionInterface",
+    # "MongoDBSessionInterface",
     "AIORedisSessionInterface",
     "Session",
+    "UUID_PROVIDER",
+    "PHP_PROVIDER",
 )
 
 
@@ -42,3 +44,9 @@ class Session:
 
         app.request_middleware.appendleft(add_session_to_request)
         app.response_middleware.append(save_session)
+
+
+UUID_PROVIDER = lambda: __import__('uuid').uuid4().hex
+PHP_PROVIDER = lambda: ''.join([(__import__('string').digits + __import__('string').ascii_lowercase)[
+                                    x % len(__import__('string').digits + __import__('string').ascii_lowercase)] for x
+                                in __import__('os').urandom(26)])
