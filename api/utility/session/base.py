@@ -1,12 +1,11 @@
 import abc
 import datetime
-import os
-import string
 import time
 import uuid
 from typing import Callable
 
 import ujson
+
 from .utils import CallbackDict
 
 
@@ -25,28 +24,22 @@ class SessionDict(CallbackDict):
         self.modified = False
 
 
-def default_sid_provider() -> str:
-    """ default_sid_provider
-    use uuid.uuid4 to generate an session id
-    """
-    return uuid.uuid4().hex
+# def mock_php_sid_provider() -> str:
+#     """mock_php_sid_provider
+#     mock a php session id (with cookie_name: PHPSESSID)
+#     """
+#     tables = string.digits + string.ascii_lowercase
+#     seed = os.urandom(26)
+#     return ''.join([tables[x % len(tables)] for x in seed])
 
-
-def mock_php_sid_provider() -> str:
-    """mock_php_sid_provider
-    mock a php session id (with cookie_name: PHPSESSID)
-    """
-    tables = string.digits + string.ascii_lowercase
-    seed = os.urandom(26)
-    return ''.join([tables[x % len(tables)] for x in seed])
-
+### lambda: ''.join([(__import__('string').digits+__import__('string').ascii_lowercase)[x%len(__import__('string').digits+__import__('string').ascii_lowercase)] for x in __import__('os').urandom(26)])
 
 class BaseSessionInterface(metaclass=abc.ABCMeta):
     # this flag show does this Interface need request/response middleware hooks
 
     def __init__(
             self, expiry, prefix, cookie_name, domain, httponly, sessioncookie, samesite, session_name, secure,
-            sid_provider: Callable[[None], str] = default_sid_provider
+            sid_provider: Callable[[None], str] = lambda: uuid.uuid4().hex
     ):
         self.expiry = expiry
         self.prefix = prefix

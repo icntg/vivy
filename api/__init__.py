@@ -37,13 +37,11 @@ class Redis:
 
         return self._pool
 
-
 def create_app() -> Sanic:
     ctx: Context = get_context()
     app = Sanic(name='VIVY', ctx=ctx)
 
     from api.utility.session import Session, InMemorySessionInterface
-    from api.utility.session.base import mock_php_sid_provider
 
     # session_instance = InMemorySessionInterface(
     #     expiry=ctx.config.SESSION.SESSION_TIMEOUT,
