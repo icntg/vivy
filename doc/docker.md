@@ -21,3 +21,12 @@ docker run --name mysql --rm -d -i -p3306:3306 \
 docker run --name redis --rm -d -i -p127.0.0.1:6379:6379 \
 -v /home/data/redis:/data redis
 ```
+
+# rsyslog
+
+```bash
+docker run rsyslog/syslog_appliance_alpine help (provides basic info)
+
+docker run --name rsyslog --rm -d -i -p127.0.0.1:514:514 \
+-v /home/data/rsyslog:/log rsyslog/syslog_appliance_alpine
+```

@@ -12,7 +12,7 @@ def enum_blueprints(path: str = './v1'):
 
 class CustomErrorHandler(ErrorHandler):
     def default(self, request, exception):
-        ''' handles errors that have no error handlers assigned '''
+        """ handles errors that have no error handlers assigned """
         # You custom error handling logic...
         # return super().default(request, exception)
         return response.html('''
@@ -45,19 +45,15 @@ def create_app() -> Sanic:
 
     ctx.DataSource.init_middleware()
 
-    # 很遗憾，sanic的静态文件好像不支持默认文件名，比如'/' => '/index.html'
-    # 但是可以使用'/'渲染到'index.html'
-    # app.static('/', app.ctx.config.STATIC, stream_large_files=True)
-    # app.static('/', str(Path(app.ctx.config.STATIC).joinpath('index.html')), stream_large_files=True)
-
-    # from api.controller.v1 import checkin
-
     app.static('/favicon.ico', ctx.config.STATIC.joinpath('favicon.ico'))
     app.static('/css/style.css', ctx.config.STATIC.joinpath('css', 'style.css'))
     app.static('/', ctx.config.BASE.joinpath('web', 'dist'))
     import api.ssr.index
     import api.ssr.login
     app.blueprint(api.ssr.login.bp)
+    from api.v1.controller import group
+    app.blueprint(group)
+
     Extend(app)
 
     if not ctx.config.SETTING.DEBUG:

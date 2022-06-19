@@ -25,23 +25,22 @@ from ..utility.external.pynacl_util import password_verify
 from ..v1.model.platform import Account
 
 ctx: Context = get_context()
-app: Sanic = Sanic.get_app()
-bp: Blueprint = Blueprint('account', 'account')
+bp: Blueprint = Blueprint('login_web', 'account', strict_slashes=False)
 
 
-@bp.route('/login-with-code.html')
-@bp.route('/login.html')
+@bp.route('/login-with-code.html', strict_slashes=False)
+@bp.route('/login.html', strict_slashes=False)
 async def login_with_code_page(_: Request):
     """ 使用账号、密码登录 """
     return response.html(render('account/login0code.html'))
 
 
-@bp.route('/login-with-portal.html')
+@bp.route('/login-with-portal.html', strict_slashes=False)
 async def login_with_portal_page(_: Request):
     return response.html(render('account/login0portal.html'))
 
 
-@bp.route('/register.html')
+@bp.route('/register.html', strict_slashes=False)
 async def register_page(_: Request):
     return response.html(render('account/register.html'))
 
@@ -234,7 +233,7 @@ class LoginUtil:
         return True
 
 
-@bp.route('/login.php', methods=['POST'])
+@bp.route('/login.php', methods=['POST'], strict_slashes=False)
 async def login(request: Request):
     """
     校验图形验证码；
@@ -260,7 +259,7 @@ async def login(request: Request):
         return res
 
 
-@bp.route('/logout.php', methods=['GET'])
+@bp.route('/logout.php', methods=['GET'], strict_slashes=False)
 def logout(request: Request):
     session = request.ctx.web_session
     del session[Constant.SESSION_NAME_CURRENT_ACCOUNT]
