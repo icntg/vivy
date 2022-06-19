@@ -1,0 +1,26 @@
+version: '3.5'
+services:
+  mysql:
+    restart: always
+    image: mariadb:latest
+    container_name: mysql
+    privileged: false
+    ports:
+      - "127.0.0.1:3306:3306"
+#    ...
+  redis:
+    restart: always
+    image: redis:latest
+    container_name: redis
+    privileged: false
+    ports:
+      - "127.0.0.1:6379:6379"
+#  ...
+  rsyslog:
+    restart: always
+    image: rsyslog/syslog_appliance_alpine
+    container_name: rsyslog
+    privileged: true
+    ports:
+      - "127.0.0.1:514:514/tcp"
+      - "127.0.0.1:514:514/udp"
