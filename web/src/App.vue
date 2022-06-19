@@ -1,30 +1,49 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav>
-  <router-view/>
+  <n-space vertical size="large">
+    <n-layout>
+      <n-layout-header>Yiheyuan Road</n-layout-header>
+      <n-layout has-sider>
+        <n-layout-sider content-style="padding: 24px;">
+          Handian Bridge
+        </n-layout-sider>
+        <n-layout-content content-style="padding: 24px;">
+          <router-view/>
+        </n-layout-content>
+      </n-layout>
+      <n-layout-footer>Chengfu Road</n-layout-footer>
+    </n-layout>
+  </n-space>
+
 </template>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+.n-layout-header,
+.n-layout-footer {
+  background: rgba(128, 128, 128, 0.2);
+  padding: 24px;
 }
 
-nav {
-  padding: 30px;
+.n-layout-sider {
+  background: rgba(128, 128, 128, 0.3);
 }
 
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
+.n-layout-content {
+  background: rgba(128, 128, 128, 0.4);
 }
 </style>
+
+<script lang="ts">
+import {defineComponent} from 'vue'
+import {NLayout, NLayoutHeader, NLayoutContent, NLayoutFooter, NLayoutSider, NSpace} from 'naive-ui'
+
+
+export default defineComponent({
+  name: 'HomeView',
+  components: {
+    NLayout, NLayoutHeader, NLayoutContent, NLayoutFooter, NLayoutSider, NSpace,
+  },
+  setup() {
+    return {}
+  },
+})
+</script>
