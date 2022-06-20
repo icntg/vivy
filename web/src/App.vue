@@ -6,9 +6,11 @@
         <n-layout-sider content-style="padding: 24px;">
           Handian Bridge
         </n-layout-sider>
-        <n-layout-content content-style="padding: 24px;">
-          <router-view/>
-        </n-layout-content>
+        <n-message-provider>
+          <n-layout-content content-style="padding: 24px;">
+            <router-view/>
+          </n-layout-content>
+        </n-message-provider>
       </n-layout>
       <n-layout-footer>Chengfu Road</n-layout-footer>
     </n-layout>

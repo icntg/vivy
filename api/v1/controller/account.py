@@ -26,6 +26,7 @@ class AccountVO:
 @account_bp.get('current', strict_slashes=False)  # /api/v1/index.php/account/current
 @need_login
 async def current_account(request: Request) -> HTTPResponse:
+    """ 当前用户与可用菜单？ """
     web_session = request.ctx.web_session
     uid: int = web_session[Constant.SESSION_NAME_CURRENT_ACCOUNT]
 
@@ -49,7 +50,10 @@ async def current_account(request: Request) -> HTTPResponse:
         return response.json(dict(
             code=0,
             message='ok',
-            data=a.__dict__,
+            data=dict(
+                account=a.__dict__,
+                menu=dict(),
+            ),
         ))
     else:
         return response.json(dict(

@@ -1,6 +1,6 @@
-# from sqlalchemy import Column, VARCHAR, TIMESTAMP, Text, CHAR, INTEGER
+from sqlalchemy import Column, VARCHAR, TIMESTAMP, Text, CHAR, INTEGER
 #
-# from .__base__ import BaseModel
+from .__base__ import BaseModel
 #
 #
 # class Resource(BaseModel):
@@ -13,3 +13,6 @@
 #
 # class ResourceAPI(Resource):
 #     pass
+
+class RoleMenu(BaseModel):
+    pass

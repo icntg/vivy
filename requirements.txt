@@ -9,3 +9,4 @@ PyNaCl>=1.5.0
 Pillow>=9.1.1
 qrcode>=7.3.1
 captcha>=0.4
+asynccasbin>=1.1.8

@@ -1,48 +1,38 @@
 <template>
-  <n-space vertical size="large">
-    <n-layout>
-      <n-layout-header>Yiheyuan Road</n-layout-header>
-      <n-layout has-sider>
-        <n-layout-sider content-style="padding: 24px;">
-          Handian Bridge
-        </n-layout-sider>
-        <n-layout-content content-style="padding: 24px;">
-          Pingshan Road
-        </n-layout-content>
-      </n-layout>
-      <n-layout-footer>Chengfu Road</n-layout-footer>
-    </n-layout>
-  </n-space>
+    <n-calendar
+        v-model:value="value"
+        #="{ year, month, date }"
+        :is-date-disabled="isDateDisabled"
+        @update:value="handleUpdateValue"
+    >
+      {{ year }}-{{ month }}-{{ date }}
+    </n-calendar>
 </template>
 
-<style scoped>
-.n-layout-header,
-.n-layout-footer {
-  background: rgba(128, 128, 128, 0.2);
-  padding: 24px;
-}
-
-.n-layout-sider {
-  background: rgba(128, 128, 128, 0.3);
-}
-
-.n-layout-content {
-  background: rgba(128, 128, 128, 0.4);
-}
-</style>
-
 <script lang="ts">
-import {defineComponent} from 'vue'
-import {NLayout, NLayoutHeader, NLayoutContent, NLayoutFooter, NLayoutSider, NSpace} from 'naive-ui'
-
+import {defineComponent, ref} from 'vue'
+import {useMessage, NCalendar} from 'naive-ui'
+import {isYesterday, addDays} from 'date-fns/esm'
 
 export default defineComponent({
-  name: 'HomeView',
   components: {
-    NLayout, NLayoutHeader, NLayoutContent, NLayoutFooter, NLayoutSider, NSpace,
+    NCalendar,
   },
   setup() {
-    return {}
-  },
+    // const message = useMessage();
+    // (window as any).$message = message;
+    return {
+      value: ref(addDays(Date.now(), 1).valueOf()),
+      handleUpdateValue(
+          _: number,
+          {year, month, date}: { year: number; month: number; date: number }
+      ) {
+        // message.success(`${year}-${month}-${date}`)
+      },
+      isDateDisabled(timestamp: number) {
+        return isYesterday(timestamp);
+      }
+    }
+  }
 })
 </script>
