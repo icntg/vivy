@@ -41,8 +41,8 @@ class Session(Constant, AbstractConfig):
         super(AbstractConfig).__init__()
         super(Constant).__init__()
         self.SECRET_HEX: Optional[str] = None
-        self.COOKIE: Optional[str] = None
-        self.LOGIN_COOKIE_TIMEOUT: Optional[int] = None
+        self.COOKIE_NAME: Optional[str] = None
+        self.LOGIN_SESSION_TIMEOUT: Optional[int] = None
         self.SESSION_TIMEOUT: Optional[int] = None
 
     def to_json(self) -> Dict:
@@ -50,8 +50,8 @@ class Session(Constant, AbstractConfig):
 
     def use_default_values(self):
         self.SECRET_HEX: Optional[str] = binascii.hexlify(os.urandom(32)).decode()
-        self.COOKIE = 'PHPSESSID'
-        self.LOGIN_COOKIE_TIMEOUT: int = 60 * 5  # 登录过程时间5分钟
+        self.COOKIE_NAME = 'PHPSESSID'
+        self.LOGIN_SESSION_TIMEOUT: int = 60 * 5  # 登录过程时间5分钟
         self.SESSION_TIMEOUT: int = 60 * 60 * 2  # 会话时间2个小时
 
 

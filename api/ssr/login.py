@@ -24,32 +24,74 @@ from ..utility.external import pynacl_util
 from ..utility.external.base_x import base255
 from ..utility.external.google_token import get_totp_token
 from ..utility.external.pynacl_util import password_verify
+from ..utility.session import InMemorySessionInterface
 from ..v1.model.platform import Account
 
 ctx: Context = get_context()
 bp: Blueprint = Blueprint('login_web', 'account', strict_slashes=False)
 
+class _LoginSession(InMemorySessionInterface):
+    """ login 过程中使用超时时间较短的内存session替代 """
+    SECRET_NAME = 's'
+
+    def __init__(self):
+        super().__init__(
+            expiry=ctx.config.SESSION.LOGIN_SESSION_TIMEOUT,
+            cookie_name=ctx.config.SESSION.COOKIE_NAME,
+            httponly=True,
+            prefix='',
+        )
+        self.sid_provider = lambda: ''.join([(__import__('string').digits + __import__('string').ascii_lowercase)[
+                                                 x % len(__import__('string').digits + __import__(
+                                                     'string').ascii_lowercase)] for x in
+                                             __import__('os').urandom(26)])
+
+    def session_start(self, req: Request, res: HTTPResponse):
+        if self.cookie_name not in req.cookies:
+            key = self.sid_provider()
+            res.cookies[self.cookie_name] = key
+            res.cookies[self.cookie_name]['httponly'] = self.httponly
+
+    def session_destroy(self, req: Request, res: HTTPResponse):
+        if self.cookie_name in req.cookies:
+            sid = req.cookies[self.cookie_name]
+            self._delete_key(sid)
+        del res.cookies[self.cookie_name]
+        del res.cookies[self.SECRET_NAME]
+
+    async def set_secret2cookie_and_token2session(self, req: Request, res: HTTPResponse, secret: str, token: str):
+        res.cookies[self.SECRET_NAME] = secret
+        res.cookies[self.SECRET_NAME]['httponly'] = self.httponly
+        key = req.cookies[self.cookie_name]
+        await self._set_value(key, token)
+
+    async def get_token(self, req: Request) -> str:
+        key = req.cookies[self.cookie_name]
+        return await self._get_value(self.prefix, key)
+
+_login_session = _LoginSession()
+
 
 @bp.route('/login-with-code.html', strict_slashes=False)
 @bp.route('/login.html', strict_slashes=False)
-async def login_with_code_page(_: Request):
+async def login_with_code_page(req: Request):
     """ 使用账号、密码登录 """
     res = response.html(render('account/login0code.html'))
-    del res.cookies['s']
+    _login_session.session_destroy(req, res)
     return res
 
 
 @bp.route('/login-with-portal.html', strict_slashes=False)
-async def login_with_portal_page(_: Request):
+async def login_with_portal_page(req: Request):
     res = response.html(render('account/login0portal.html'))
-    del res.cookies['s']
+    _login_session.session_destroy(req, res)
     return res
 
 
 @bp.route('/register.html', strict_slashes=False)
-async def register_page(_: Request):
+async def register_page(req: Request):
     res = response.html(render('account/register.html'))
-    del res.cookies['s']
+    _login_session.session_destroy(req, res)
     return res
 
 
@@ -222,30 +264,24 @@ class LoginUtil:
         else:
             res = response.html(render('account/login1token.html'))
 
-        web_session = request.ctx.web_session
-        if Constant.SESSION_NAME_LOGIN in web_session:
-            del web_session[Constant.SESSION_NAME_LOGIN]
-        web_session[Constant.SESSION_NAME_LOGIN] = lvo.session_token
+        _login_session.session_start(request, res)
         enc_cookie = pynacl_util.encrypt(ctx.secret, lvo.serialize())
-        res.cookies['s'] = base64.urlsafe_b64encode(enc_cookie).decode()
-        res.cookies['s']['httponly'] = True
+        await _login_session.set_secret2cookie_and_token2session(request, res, enc_cookie.decode(), lvo.session_token)
         return res
 
     @staticmethod
     async def step_2_verify_factors(request: Request) -> Tuple[int, HTTPResponse]:
         lvo = LoginVO()
-        web_session = request.ctx.web_session
         try:
-            enc_cookie = request.cookies['s']
+            enc_cookie = request.cookies[_login_session.SECRET_NAME]
             stream = pynacl_util.decrypt(ctx.secret, base64.urlsafe_b64decode(enc_cookie))
             lvo.deserialize(stream)
-            if not secrets.compare_digest(web_session[Constant.SESSION_NAME_LOGIN], lvo.session_token):
+            s_token = await _login_session.get_token(request)
+            if not secrets.compare_digest(s_token, lvo.session_token):
                 raise ValueError('tokens are different between cookie and session')
         except Exception as e:
             _ = e  # 没有加密信息或者解密失败。
             lvo.init_fake()
-        if Constant.SESSION_NAME_LOGIN in web_session:
-            del web_session[Constant.SESSION_NAME_LOGIN]
 
         capt: str = request.form.get('capt')
         totp: str = request.form.get('auth')
@@ -303,7 +339,7 @@ class LoginUtil:
                     back_url='/',
                 ))
         res: HTTPResponse = result[1]
-        del res.cookies['s']
+        _login_session.session_destroy(request, res)
         return result[0], res
 
     @staticmethod
@@ -345,7 +381,7 @@ async def login(request: Request):
 def logout(request: Request):
     session = request.ctx.web_session
     del session[Constant.SESSION_NAME_CURRENT_ACCOUNT]
-    if ctx.config.SESSION.COOKIE in request.cookies:
+    if ctx.config.SESSION.COOKIE_NAME in request.cookies:
         return response.html(render('account/logout.html'))
     else:
         return response.redirect('/')

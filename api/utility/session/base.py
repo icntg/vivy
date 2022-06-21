@@ -2,7 +2,7 @@ import abc
 import datetime
 import time
 import uuid
-from typing import Callable
+from typing import Callable, Union
 
 import ujson
 
@@ -50,7 +50,7 @@ class BaseSessionInterface(metaclass=abc.ABCMeta):
         self.samesite = samesite
         self.session_name = session_name
         self.secure = secure
-        self.sid_provider: Callable[[None], str] = sid_provider
+        self.sid_provider: Callable[[], str] = sid_provider
 
     def _delete_cookie(self, request, response):
         req = get_request_container(request)
@@ -103,7 +103,7 @@ class BaseSessionInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def _set_value(self, key: str, data: SessionDict):
+    async def _set_value(self, key: str, data: Union[SessionDict, str]):
         """Set value for datastore"""
         raise NotImplementedError
 

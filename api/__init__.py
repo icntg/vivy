@@ -35,7 +35,7 @@ def create_app() -> Sanic:
         session_instance = AIORedisSessionInterface(
             app.ctx.redis,
             expiry=ctx.config.SESSION.SESSION_TIMEOUT,
-            cookie_name=ctx.config.SESSION.COOKIE,
+            cookie_name=ctx.config.SESSION.COOKIE_NAME,
             session_name='web_session',
         )
         session_instance.sid_provider = PHP_PROVIDER
