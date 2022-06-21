@@ -15,6 +15,7 @@ class AsyncSQLAlchemy:
         from api.utility.data.data_source import MySQL
         mysql_cfg: Union[MySQL, DataSource] = ctx.config.DATA_SOURCES[0]
         self.engine: Engine = create_async_engine(data_source_url, echo=mysql_cfg.show_sql)
+        ctx.__dict__['engine'] = self.engine
         self.base_model_session_ctx = ContextVar("session")
 
     def init_middleware(self):
