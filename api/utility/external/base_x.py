@@ -1,4 +1,5 @@
-from typing import Tuple, Optional, List
+import string
+from typing import Optional, List
 
 
 class BaseX:
@@ -42,6 +43,7 @@ class BaseX:
 
 
 base255 = BaseX(bytes([x for x in range(1, 256)]))
+base36 = BaseX((string.digits + string.ascii_lowercase).encode())
 
 
 def __test__():

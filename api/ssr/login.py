@@ -25,7 +25,7 @@ from ..utility.external.base_x import base255
 from ..utility.external.google_token import get_totp_token
 from ..utility.external.pynacl_util import password_verify
 from ..utility.session.utils import ExpiringDict
-from ..v1.model.platform import Account
+from ..v1.platform.model.platform import Account
 
 ctx: Context = get_context()
 bp: Blueprint = Blueprint('login_web', 'account', strict_slashes=False)

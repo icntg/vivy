@@ -51,7 +51,7 @@ def create_app() -> Sanic:
     import api.ssr.index
     import api.ssr.login
     app.blueprint(api.ssr.login.bp)
-    from api.v1.controller import group
+    from api.v1 import group
     app.blueprint(group)
 
     Extend(app)

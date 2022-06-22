@@ -131,8 +131,8 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         self.logs.write('To create tables\n')
 
         import api.v1.model.platform as _
-        import api.v1.model.__base__
-        base = api.v1.model.__base__.Base
+        import api.v1.platform.model.__base__
+        base = api.v1.platform.model.__base__.Base
         try:
             async with self.engine.begin() as conn:
                 await conn.run_sync(base.metadata.create_all)
@@ -147,12 +147,12 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         u = self.cfg['admin']
         import api.v1.model.platform
 
-        role = api.v1.model.platform.Role()
+        role = api.v1.model.platform.platform.Role()
         role.id = object_id()
         role.name = '系统管理员'
         role.level = 9999
 
-        admin = api.v1.model.platform.Account()
+        admin = api.v1.model.platform.platform.Account()
         admin.id = object_id()
         admin.code = u['loginName']
         admin.login_name = u['loginName']
@@ -161,7 +161,7 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         admin.comment = '系统管理员'
         admin.name = '系统管理员'
 
-        account_role = api.v1.model.platform.AccountRole()
+        account_role = api.v1.model.platform.platform.AccountRole()
         account_role.id = object_id()
         account_role.account_id = admin.id
         account_role.role_id = role.id

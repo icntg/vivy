@@ -1,6 +1,6 @@
 from sqlalchemy import Column, VARCHAR, TIMESTAMP, Text, CHAR, INTEGER
 
-from .__base__ import BaseModel
+from api.v1.platform.model.__base__ import BaseModel
 
 
 class Account(BaseModel):
@@ -35,7 +35,3 @@ class AccountRole(BaseModel):
     __tablename__ = 'pf_account_role'
     account_id = Column(CHAR(20), nullable=False, index=True, doc='账号ID')
     role_id = Column(CHAR(20), nullable=False, doc='角色ID')
-
-
-# class RoleResource(BaseModel):
-#     pass

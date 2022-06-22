@@ -4,7 +4,7 @@ from typing import Tuple
 
 from captcha.image import ImageCaptcha
 
-TABLE = '23467acdefhkmnqrtwxyACEFHKMNQRTWXY'
+TABLE = '23467acdefhkmnqrtwxyACEFHKMNQRTWXY'  # 去掉了容易混淆的字符
 N = 5
 # CAP = ImageCaptcha(fonts=[str(__import__('api.utility.constant.Constant').BASE.joinpath('resource', 'static', 'font',
 #                                                                                         'wkzyzt_tty_v4.ttf'))])

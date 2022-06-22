@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from jinja2 import Environment, PackageLoader
 
 from api.utility.context import Context, get_context

@@ -4,8 +4,8 @@ from sanic import Blueprint, Request, HTTPResponse, response
 from sqlalchemy import select
 
 from api.utility.constant import Constant
-from api.v1.controller.__auth__ import need_login
-from api.v1.model.platform import Account
+from api.v1.platform.controller.__auth__ import need_login
+from api.v1.platform.model.platform import Account
 
 account_bp: Blueprint = Blueprint('account', 'account')
 

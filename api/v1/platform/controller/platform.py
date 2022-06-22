@@ -1,6 +1,6 @@
 from sanic import Blueprint, Request, HTTPResponse
 
-from api.v1.controller.__auth__ import need_login
+from api.v1.platform.controller.__auth__ import need_login
 
 platform_bp: Blueprint = Blueprint('platform', 'platform')
 
@@ -42,4 +42,8 @@ class DepartmentController:
 
 
 class RoleController:
+    pass
+
+
+class MenuController:
     pass
