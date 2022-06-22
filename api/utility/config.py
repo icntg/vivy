@@ -51,8 +51,8 @@ class Session(Constant, AbstractConfig):
     def use_default_values(self):
         self.SECRET_HEX: Optional[str] = binascii.hexlify(os.urandom(32)).decode()
         self.COOKIE_NAME = 'PHPSESSID'
-        self.LOGIN_SESSION_TIMEOUT: int = 60 * 5  # 登录过程时间5分钟
-        self.SESSION_TIMEOUT: int = 60 * 60 * 2  # 会话时间2个小时
+        self.LOGIN_SESSION_TIMEOUT: int = 60 * 5  # 登录过程超时时间5分钟
+        self.SESSION_TIMEOUT: int = 60 * 60 * 2  # 会话超时时间2个小时
 
 
 class Setting(Constant, AbstractConfig):

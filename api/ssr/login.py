@@ -24,23 +24,23 @@ from ..utility.external import pynacl_util
 from ..utility.external.base_x import base255
 from ..utility.external.google_token import get_totp_token
 from ..utility.external.pynacl_util import password_verify
-from ..utility.session import InMemorySessionInterface
+from ..utility.session.utils import ExpiringDict
 from ..v1.model.platform import Account
 
 ctx: Context = get_context()
 bp: Blueprint = Blueprint('login_web', 'account', strict_slashes=False)
 
-class _LoginSession(InMemorySessionInterface):
+
+class _LoginSession:
     """ login 过程中使用超时时间较短的内存session替代 """
     SECRET_NAME = 's'
+    STORE = ExpiringDict()
 
     def __init__(self):
-        super().__init__(
-            expiry=ctx.config.SESSION.LOGIN_SESSION_TIMEOUT,
-            cookie_name=ctx.config.SESSION.COOKIE_NAME,
-            httponly=True,
-            prefix='',
-        )
+        self.expiry = ctx.config.SESSION.LOGIN_SESSION_TIMEOUT
+        self.cookie_name = ctx.config.SESSION.COOKIE_NAME
+        self.httponly = True
+        self.prefix = ''
         self.sid_provider = lambda: ''.join([(__import__('string').digits + __import__('string').ascii_lowercase)[
                                                  x % len(__import__('string').digits + __import__(
                                                      'string').ascii_lowercase)] for x in
@@ -55,19 +55,26 @@ class _LoginSession(InMemorySessionInterface):
     def session_destroy(self, req: Request, res: HTTPResponse):
         if self.cookie_name in req.cookies:
             sid = req.cookies[self.cookie_name]
-            self._delete_key(sid)
+            if sid in self.STORE:
+                self.STORE.delete(sid)
         del res.cookies[self.cookie_name]
         del res.cookies[self.SECRET_NAME]
 
-    async def set_secret2cookie_and_token2session(self, req: Request, res: HTTPResponse, secret: str, token: str):
+    def set_secret2cookie_and_token2session(self, req: Request, res: HTTPResponse, secret: str, token: str):
         res.cookies[self.SECRET_NAME] = secret
         res.cookies[self.SECRET_NAME]['httponly'] = self.httponly
-        key = req.cookies[self.cookie_name]
-        await self._set_value(key, token)
+        if self.cookie_name in req.cookies:
+            key = req.cookies[self.cookie_name]
+        else:
+            key = self.sid_provider()
+        self.STORE.set(key, token, self.expiry)
 
-    async def get_token(self, req: Request) -> str:
-        key = req.cookies[self.cookie_name]
-        return await self._get_value(self.prefix, key)
+    def get_token(self, req: Request) -> Optional[str]:
+        if self.cookie_name in req.cookies:
+            key = req.cookies[self.cookie_name]
+            if key in self.STORE:
+                return self.STORE.get_by_sid(key)
+
 
 _login_session = _LoginSession()
 
@@ -141,23 +148,31 @@ class LoginVO:
         1  bytes        \x00
             base255(form_pass)
         """
-        buf = bytearray()
-        buf.append(self._ctrl_byte & 0xff)
-        buf.extend(base64.urlsafe_b64decode(self.session_token))
-        buf.extend(struct.pack('>i', self.db_id))
-        salt, mac = self.db_password_hash.split('$')
-        buf.extend(base64.b64decode(salt + '=='))
-        buf.extend(base64.b64decode(mac + '='))
-        token = os.urandom(10) \
-            if self.db_token is None or len(self.db_token) != 16 else \
-            base64.b32decode(self.db_token.upper())
-        buf.extend(token)
-        buf.extend(self.session_captcha.encode())
-        buf.append(0)
-        buf.extend(base255.encode(self.form_user.encode()))
-        buf.append(0)
-        buf.extend(base255.encode(self.form_pass.encode()))
-        return bytes(buf)
+        def _serialize() -> bytes:
+            buf = bytearray()
+            buf.append(self._ctrl_byte & 0xff)
+            buf.extend(base64.urlsafe_b64decode(self.session_token))
+            buf.extend(struct.pack('>i', self.db_id))
+            salt, mac = self.db_password_hash.split('$')
+            buf.extend(base64.b64decode(salt + '=='))
+            buf.extend(base64.b64decode(mac + '='))
+            token = os.urandom(10) \
+                if self.db_token is None or len(self.db_token) != 16 else \
+                base64.b32decode(self.db_token.upper())
+            buf.extend(token)
+            buf.extend(self.session_captcha.encode())
+            buf.append(0)
+            buf.extend(base255.encode(self.form_user.encode()))
+            buf.append(0)
+            buf.extend(base255.encode(self.form_pass.encode()))
+            return bytes(buf)
+        try:
+            return _serialize()
+        except Exception as e:
+            _ = e
+            self.init_fake()
+            self.has_error = True
+            return _serialize()
 
     def deserialize(self, stream: bytes) -> None:
         s = stream
@@ -204,6 +219,17 @@ class LoginVO:
             self._ctrl_byte |= 0b00000010
         else:
             self._ctrl_byte &= 0b11111101
+
+    @property
+    def has_error(self) -> bool:
+        return (self._ctrl_byte >> 7) & 1 == 1
+
+    @has_error.setter
+    def has_error(self, t: bool) -> None:
+        if t:
+            self._ctrl_byte |= 0b10000000
+        else:
+            self._ctrl_byte &= 0b01111111
 
 
 class LoginUtil:
@@ -266,7 +292,8 @@ class LoginUtil:
 
         _login_session.session_start(request, res)
         enc_cookie = pynacl_util.encrypt(ctx.secret, lvo.serialize())
-        await _login_session.set_secret2cookie_and_token2session(request, res, enc_cookie.decode(), lvo.session_token)
+        b64_enc_cookie = base64.urlsafe_b64encode(enc_cookie).decode()
+        _login_session.set_secret2cookie_and_token2session(request, res, b64_enc_cookie, lvo.session_token)
         return res
 
     @staticmethod
@@ -276,7 +303,7 @@ class LoginUtil:
             enc_cookie = request.cookies[_login_session.SECRET_NAME]
             stream = pynacl_util.decrypt(ctx.secret, base64.urlsafe_b64decode(enc_cookie))
             lvo.deserialize(stream)
-            s_token = await _login_session.get_token(request)
+            s_token = _login_session.get_token(request)
             if not secrets.compare_digest(s_token, lvo.session_token):
                 raise ValueError('tokens are different between cookie and session')
         except Exception as e:
@@ -382,6 +409,8 @@ def logout(request: Request):
     session = request.ctx.web_session
     del session[Constant.SESSION_NAME_CURRENT_ACCOUNT]
     if ctx.config.SESSION.COOKIE_NAME in request.cookies:
-        return response.html(render('account/logout.html'))
+        res = response.html(render('account/logout.html'))
     else:
-        return response.redirect('/')
+        res = response.redirect('/')
+    _login_session.session_destroy(request, res)
+    return res
