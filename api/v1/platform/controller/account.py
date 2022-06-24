@@ -25,12 +25,12 @@ class AccountVO:
 
 @account_bp.get('current', strict_slashes=False)  # /api/v1/index.php/account/current
 @need_login
-async def current_account(request: Request) -> HTTPResponse:
+async def current_account(req: Request) -> HTTPResponse:
     """ 当前用户与可用菜单？ """
-    web_session = request.ctx.web_session
+    web_session = req.ctx.web_session
     uid: int = web_session[Constant.SESSION_NAME_CURRENT_ACCOUNT]
 
-    db_session = request.ctx.db_session
+    db_session = req.ctx.db_session
     async with db_session.begin():
         stmt = select(
             Account.id,
@@ -61,3 +61,7 @@ async def current_account(request: Request) -> HTTPResponse:
             message='error of querying current user',
         ))
 
+@account_bp.get('menu', strict_slashes=False)  # /api/v1/index.php/account/current
+@need_login
+async def menu_by_role(req: Request) -> HTTPResponse:
+    pass
