@@ -35,8 +35,16 @@
             <div v-if="step==0"><!-- 提交页面 -->
                 <fieldset>
                     <legend><h2>保存</h2></legend>
-                    <a class="pure-button pure-button-primary" @click="initialize()"
-                       v-bind:class="{'pure-button-disabled':statusInit.ing>0}">已完成设置，进行初始化！</a>
+                    <div class="pure-g">
+                        <div class="pure-u-1-4">
+                            <a class="pure-button pure-button-primary" @click="initialize()"
+                               v-bind:class="{'pure-button-disabled':statusInit.ing>0}">已完成设置，进行初始化！</a>
+                        </div>
+                        <div class="pure-u-1-4">
+                            <a class="pure-button">仅建立数据表</a>
+                        </div>
+                    </div>
+
                     <span class="pure-form-message" v-if="statusInit.ing>0" v-text="statusInit.msg"></span>
                 </fieldset>
                 <div v-if="statusInit.log.length>0">
