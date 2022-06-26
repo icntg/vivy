@@ -5,8 +5,8 @@ from api.v1.platform.model.__base__ import BaseModel
 
 class Menu(BaseModel):
     __tablename__ = 'pf_menu'
-    text = Column(VARCHAR(255), doc='显示文本')
     path = Column(Text, doc='菜单URL')
+    text = Column(VARCHAR(255), doc='显示文本')
     parent_id = Column(CHAR(20), nullable=True, doc='上级菜单ID')
     sort = Column(INTEGER, doc='排序')
 

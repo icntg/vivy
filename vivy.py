@@ -37,7 +37,7 @@ def check_init_state() -> bool:
 
 
 def initialize_mode():
-    from api.v1.initialize import create_and_run
+    from api.v1.initialize.initialize import create_and_run
     create_and_run()
 
 

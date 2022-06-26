@@ -1,6 +1,9 @@
 import sys
 from typing import AnyStr
 
+from api.utility.external.base32 import encode_for_id
+from api.utility.external.identity import ObjectId
+
 
 def std_print(s: AnyStr) -> None:
     sys.stdout.write(s)
@@ -13,6 +16,13 @@ def err_print(s: AnyStr) -> None:
 
 
 def object_id() -> str:
-    from .base32 import encode_for_id
-    from .identity import ObjectId
     return encode_for_id(ObjectId.generate()).decode()
+
+
+def __test__():
+    for _ in range(20):
+        print(object_id())
+
+
+if __name__ == '__main__':
+    __test__()

@@ -61,7 +61,7 @@ async def current_account(req: Request) -> HTTPResponse:
             message='error of querying current user',
         ))
 
-@account_bp.get('menu', strict_slashes=False)  # /api/v1/index.php/account/current
+@account_bp.get('menu', strict_slashes=False)  # /api/v1/index.php/account/menu
 @need_login
 async def menu_by_role(req: Request) -> HTTPResponse:
     pass
