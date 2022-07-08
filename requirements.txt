@@ -11,3 +11,5 @@ qrcode>=7.3.1
 captcha>=0.4
 asynccasbin>=1.1.8
 casbin_sqlalchemy_adapter>=0.4.2
+jsonnet>=0.18.0
+
