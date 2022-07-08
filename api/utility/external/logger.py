@@ -2,6 +2,7 @@ import logging
 from logging import Logger, StreamHandler, Handler, Formatter
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+import socket
 from typing import List
 
 from api.utility.constant import Constant
@@ -38,3 +39,32 @@ def init_logger(
         handler.setFormatter(fmt)
         logger.addHandler(handler)
     return logger
+
+
+def __test__():
+    # 测试rsyslog
+    handler_udp = logging.handlers.SysLogHandler(
+        address=('localhost', 514),
+        facility=logging.handlers.SysLogHandler.LOG_UUCP,
+        socktype=socket.SOCK_DGRAM,
+        # socktype = socket.SOCK_STREAM,
+    )
+    handler_tcp = logging.handlers.SysLogHandler(
+        address=('localhost', 514),
+        facility=logging.handlers.SysLogHandler.LOG_UUCP,
+        # socktype=socket.SOCK_DGRAM,
+        socktype = socket.SOCK_STREAM,
+    )
+    logger = logging.getLogger()
+    # logger.handlers.clear()
+    logger.handlers.append(handler_udp)
+    logger.handlers.append(handler_tcp)
+    import time
+
+    logger.info(f'test info {time.time()}')
+    logger.debug(f'test debug {time.time()}')
+    logger.critical(f'test critical {time.time()}')
+
+
+if __name__ == '__main__':
+    __test__()

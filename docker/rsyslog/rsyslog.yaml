@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+    rsyslog:
+      build:
+                context: .
+                dockerfile: rsyslog.dockerfile
+      privileged: true
+      ports:
+        - "514:514/tcp"
+        - "514:514/udp"
+      volumes:
+        - /tmp/data:/var/log
+      restart: always
+
