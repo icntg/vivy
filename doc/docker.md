@@ -27,9 +27,13 @@ docker run --name redis --rm -d -i -p127.0.0.1:6379:6379 \
 ```bash
 docker run rsyslog/syslog_appliance_alpine help (provides basic info)
 
-docker run --name rsyslog --rm -d -i -p127.0.0.1:514:514 \
--v /home/data/rsyslog:/log rsyslog/syslog_appliance_alpine
+docker run --name rsyslog --rm -d -i \
+-p127.0.0.1:514:514 \
+-v /home/data/rsyslog:/log \
+rsyslog/syslog_appliance_alpine
 
-docker run --privileged --name rsyslog --rm -it \
-  -p514:514 -p514:514/udp rsyslog/syslog_appliance_alpine
+docker run -i -t -d --privileged --name rsyslog --rm \
+  -p514:514 -p514:514/udp \
+  -v /home/data/rsyslog:/var/log/vivy \
+  rsyslog_rsyslog
 ```

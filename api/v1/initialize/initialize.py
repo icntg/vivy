@@ -17,7 +17,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from api.utility.config import Config
 from api.utility.constant import Constant
 from api.utility.data.data_source import MySQL
 from api.utility.external.functions import object_id
@@ -293,3 +292,7 @@ def create_and_run():
         debug=True,
         workers=1,
     )
+
+
+if __name__ == '__main__':
+    create_and_run()

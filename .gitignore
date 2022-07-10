@@ -58,4 +58,5 @@ __pycache__/
 *.log
 log.txt
 
-/conf/
+/conf/*
+!/conf/example.config.js
