@@ -6,7 +6,9 @@ from logging import Logger
 from types import ModuleType
 from typing import Union, Optional
 
-from .config import Config
+import js2py
+
+from .data.data_source import MySQL
 from .external import logger
 from api.utility.data.async_sqlalchemy import AsyncSQLAlchemy
 from .external.functions import err_print
@@ -15,7 +17,7 @@ from .external.functions import err_print
 class Context(ModuleType):
     def __init__(self) -> None:
         super().__init__('context')
-        self.config: Optional[Config] = None
+        self.config: Optional[js2py.base.JsObjectWrapper] = None
 
         self.secret: Optional[Union[bytes, bytearray]] = None
 
@@ -27,10 +29,10 @@ class Context(ModuleType):
 
         self.DataSource: Optional[AsyncSQLAlchemy] = None
 
-    def init_with_config(self, cfg: Config):
+    def init_with_config(self, cfg: js2py.base.JsObjectWrapper):
         self.config = cfg
         try:
-            self.secret = binascii.unhexlify(self.config.SESSION.SECRET_HEX)
+            self.secret = binascii.unhexlify(self.config.session.secret_hex)
             if len(self.secret) != 32:
                 import hashlib
                 self.secret = hashlib.sha256(self.secret)
@@ -39,40 +41,46 @@ class Context(ModuleType):
             err_print('[WARNING] cannot decode hex secret. to use random instead.\n')
             self.secret = os.urandom(32)
 
+
     def init_loggers(self):
+        address = (self.config.dependency.rsyslog.host, self.config.dependency.rsyslog.port)
         try:
             self.OutputLogger = logger.init_logger(
-                'output',
-                str(self.config.SETTING.LOGGER_DIRECTORY),
-                self.config.SETTING.DEBUG,
-                self.config.SETTING.LOGGER_FORMATTER,
+                name='output',
+                address=address,
+                directory=self.config.setting.logger_directory,
+                debug=self.config.setting.debug,
+                formatter=self.config.setting.logger_formatter,
             )
         except Exception as e:
             err_print(f'[ERROR] cannot initialize OutputLogger, {type(e)}:{e}')
             sys.exit(-1)
         try:
             self.SecureLogger = logger.init_logger(
-                'secure',
-                str(self.config.SETTING.LOGGER_DIRECTORY),
-                self.config.SETTING.DEBUG,
-                self.config.SETTING.LOGGER_FORMATTER,
+                name='secure',
+                address=address,
+                directory=self.config.setting.logger_directory,
+                debug=self.config.setting.debug,
+                formatter=self.config.setting.logger_formatter,
             )
         except Exception as e:
             err_print(f'[ERROR] cannot initialize SecureLogger, {type(e)}:{e}')
             sys.exit(-1)
         try:
             self.AccessLogger = logger.init_logger(
-                'access',
-                str(self.config.SETTING.LOGGER_DIRECTORY),
-                self.config.SETTING.DEBUG,
-                self.config.SETTING.LOGGER_FORMATTER,
+                name='access',
+                address=address,
+                directory=self.config.setting.logger_directory,
+                debug=self.config.setting.debug,
+                formatter=self.config.setting.logger_formatter,
             )
         except Exception as e:
             err_print(f'[ERROR] cannot initialize AccessLogger, {type(e)}:{e}')
             sys.exit(-1)
 
     def init_data_source(self):
-        self.DataSource = AsyncSQLAlchemy(str(self.config.DATA_SOURCES[0]))
+        mysql: MySQL = MySQL(self.config.dependency.mysql)
+        self.DataSource = AsyncSQLAlchemy(str(mysql))
 
 
 sys.modules["ApplicationContext"] = Context()

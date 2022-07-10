@@ -31,14 +31,14 @@ class MySQL(DataSource):
             self.database = cfg['database']
         if cfg is not None and 'option' in cfg:
             self.option = cfg['option']
-        if cfg is not None and 'maxIdle' in cfg:
-            self.max_idle = cfg['maxIdle']
-        if cfg is not None and 'maxOpen' in cfg:
-            self.max_open = cfg['maxOpen']
-        if cfg is not None and 'showSql' in cfg:
-            self.show_sql = cfg['showSql']
-        if cfg is not None and 'showExecTime' in cfg:
-            self.show_exec_time = cfg['showExecTime']
+        if cfg is not None and 'max_idle' in cfg:
+            self.max_idle = cfg['max_idle']
+        if cfg is not None and 'max_open' in cfg:
+            self.max_open = cfg['max_open']
+        if cfg is not None and 'show_sql' in cfg:
+            self.show_sql = cfg['show_sql']
+        if cfg is not None and 'show_exec_time' in cfg:
+            self.show_exec_time = cfg['show_exec_time']
 
     def __repr__(self):
         # SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:123456@xx.xx.xx.xx:3306/xx?charset=utf8mb4"

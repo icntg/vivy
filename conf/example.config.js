@@ -21,7 +21,7 @@ const config = {
         rsyslog: {
             host: 'localhost',
             port: 514,
-            protocol: 'tcp',
+            protocol: 'tcp', // 这个配置暂时无用，默认只使用tcp
         },
         mongodb: {
             // 应用里暂时没有用到mongodb。
@@ -41,6 +41,6 @@ const config = {
     setting: {
         debug: false,
         logger_formatter: '[%(levelname)s]%(asctime)s[%(filename)s:%(lineno)s][%(name)s]: %(message)s',
-        logger_directory: '${BASE}/logs',  // 如果rsyslog可用，则默认不会使用自带的文件日志服务（会降低很多性能）。
+        logger_directory: './logs',  // 如果rsyslog可用，则默认不会使用自带的文件日志服务（会降低很多性能）。
     },
 }

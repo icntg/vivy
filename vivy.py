@@ -14,8 +14,9 @@ source venv/bin/activate
 python vivy.py -X pycache_prefix=.  # __pycache__ in one place
 """
 
-from api.utility.constant import Constant
+from api.utility.constant import constant
 from api.utility.external.functions import err_print, std_print
+
 
 
 def check_init_state() -> bool:
@@ -25,11 +26,12 @@ def check_init_state() -> bool:
     False = 未初始化
     """
     use_service_mode = True
-    if not Constant.INIT.exists():
-        err_print(f'[{Constant.INIT}] does not exist\n')
+    if not constant.INIT.exists():
+        err_print(f'[{constant.INIT}] does not exist\n')
         use_service_mode = False
-    if not Constant.CONF.exists():
-        err_print(f'[{Constant.CONF}] does not exist\n')
+    if not constant.CONF.exists():
+        err_print(f'[{constant.CONF}] does not exist\n')
+        std_print(f'Please COPY [example.config.js] to [config.js] and EDIT it with correct configuration.\n')
         use_service_mode = False
     if not use_service_mode:
         std_print('to start static_initialize mode ...\n')
@@ -43,14 +45,13 @@ def initialize_mode():
 
 def service_mode():
     # 1. read config
-    from api.utility.config import Config
-    config: Config = Config()
-    config.read()
-
     from api.utility.context import Context, get_context
     ctx: Context = get_context()
 
-    ctx.init_with_config(config)
+    from api.utility import config
+    cfg = config.read()
+
+    ctx.init_with_config(cfg)
     # 2. initial logger
     ctx.init_loggers()
     # 3. connect database

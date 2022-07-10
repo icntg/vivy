@@ -1,7 +1,7 @@
 """
 初始化工具。单独一个文件，用于交互生成配置。
 需要在$BASE/conf目录下，生成
-config.yaml
+config.js
 initialize.log
 共2个文件。
 """
@@ -17,14 +17,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from api.utility.constant import Constant
+from api.utility.constant import constant
 from api.utility.data.data_source import MySQL
 from api.utility.external.functions import object_id
 from api.utility.external.google_token import generate_token_and_qrcode
 from api.utility.external.pynacl_util import password_hash
 
-STATIC = Path(Constant.BASE).joinpath('resource', 'static_initialize')
-CONF = Path(Constant.BASE).joinpath('conf')
+STATIC = Path(constant.BASE).joinpath('resource', 'static_initialize')
+CONF_DIR = Path(constant.BASE).joinpath('conf')
 
 
 class Initialization:
@@ -245,6 +245,7 @@ def create_and_run():
 
     @app.get('/')
     async def main_page(_: Request):
+        # TODO: 检查配置文件，提示
         return response.html(open(str(STATIC.joinpath('index.html')), 'rb').read())
 
     @app.post('/api/token')
