@@ -1,7 +1,13 @@
 import js2py
 
 
-def read(filename='config.js'):
-    with open(filename, 'r') as f:
-        config = js2py.eval_js(f.read())
-        return config
+def _check(conf: js2py.base.JsObjectWrapper) -> bool:
+    pass
+
+
+def read(filename='config.js') -> js2py.base.JsObjectWrapper:
+    c = js2py.run_file(filename)
+    conf = c[0]
+    # 检查文件内容？
+    return conf
+

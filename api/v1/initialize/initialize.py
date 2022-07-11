@@ -129,7 +129,7 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
     async def create_tables(self) -> bool:
         self.logs.write('To create tables\n')
 
-        import api.v1.model.platform as _
+        import api.v1.platform.model.platform as _
         import api.v1.platform.model.__base__
         base = api.v1.platform.model.__base__.Base
         try:
@@ -144,14 +144,14 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
     async def insert_admin(self) -> bool:
         self.logs.write('To insert admin\n')
         u = self.cfg['admin']
-        import api.v1.model.platform
+        import api.v1.platform.model.platform
 
-        role = api.v1.model.platform.platform.Role()
+        role = api.v1.platform.model.platform.Role()
         role.id = object_id()
         role.name = '系统管理员'
         role.level = 9999
 
-        admin = api.v1.model.platform.platform.Account()
+        admin = api.v1.platform.model.platform.Account()
         admin.id = object_id()
         admin.code = u['loginName']
         admin.login_name = u['loginName']
@@ -160,7 +160,7 @@ CREATE USER IF NOT EXISTS '{m['opsUsername']}'@'{m['opsUsernameIP']}' IDENTIFIED
         admin.comment = '系统管理员'
         admin.name = '系统管理员'
 
-        account_role = api.v1.model.platform.platform.AccountRole()
+        account_role = api.v1.platform.model.platform.AccountRole()
         account_role.id = object_id()
         account_role.account_id = admin.id
         account_role.role_id = role.id
@@ -245,7 +245,20 @@ def create_and_run():
 
     @app.get('/')
     async def main_page(_: Request):
-        # TODO: 检查配置文件，提示
+        conf_path = CONF_DIR.joinpath('config.js')
+        conf_example = CONF_DIR.joinpath('example.config.js')
+        if not conf_path.exists():
+            return response.html(f'''配置文件[ {conf_path.absolute()} ]不存在。<br/>
+            请拷贝[ {conf_example.absolute()} ]到[ {conf_path.absolute()} ]，并修改为正确的配置。<br>
+            完成后请刷新重试。''')
+        try:
+            import js2py
+            _ = js2py.run_file(conf_path.absolute())
+        except Exception as e:
+            return response.html(f'''
+            配置文件[ {conf_path.absolute()} ]解析错误：{e}<br/>
+            请检查。完成后刷新重试。
+            ''')
         return response.html(open(str(STATIC.joinpath('index.html')), 'rb').read())
 
     @app.post('/api/token')

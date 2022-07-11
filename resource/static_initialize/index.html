@@ -14,9 +14,6 @@
         <div class="pure-menu pure-menu-horizontal">
             <a href="javascript:void(0);" class="pure-menu-heading pure-menu-link" @click="step=0">初始化</a>
             <ul class="pure-menu-list">
-                <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==1}">
-                    <a href="javascript:void(0);" class="pure-menu-link" @click="step=1">MySQL</a>
-                </li>
                 <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==2}">
                     <a href="javascript:void(0);" class="pure-menu-link" @click="step=2">系统管理员账号</a>
                 </li>
@@ -52,46 +49,7 @@
                 </div>
             </div>
 
-            <div v-if="step==1"><!-- MySQL设置 -->
-                <fieldset>
-                    <legend><h2>数据库 MairaDB / MySQL</h2></legend>
-                    <label for="host">HOST</label>
-                    <input class="pure-input-1" type="text" id="host" name="host" placeholder="数据库地址"
-                           v-model="modelMysql.host"/>
-                    <label for="port">PORT</label>
-                    <input class="pure-input-1" type="text" id="port" name="port" placeholder="数据库端口"
-                           v-model="modelMysql.port"/>
-                    <label for="username">USERNAME</label>
-                    <input class="pure-input-1" type="text" id="username" name="username" placeholder="数据库用户"
-                           v-model="modelMysql.username"/>
-                    <label for="password">PASSWORD</label>
-                    <input class="pure-input-1" type="password" id="password" name="password" placeholder="数据库密码"
-                           v-model="modelMysql.password"/>
-                    <label for="database">DATABASE</label>
-                    <input class="pure-input-1" type="text" id="database" name="database" placeholder="数据库名称"
-                           v-model="modelMysql.database"/>
-                    <label for="create-database" class="pure-checkbox">
-                        <input type="checkbox" id="create-database" v-model="modelMysql.createDatabase"/> 新建数据库与专属用户
-                    </label>
-                    <div v-show="modelMysql.createDatabase">
-                        <span class="pure-form-message">如需创建数据库与专属用户，请确保初始化使用的用户有相应权限。</span>
-                        <label for="ops-username">OPS USERNAME</label>
-                        <input class="pure-input-1" type="text" id="ops-username" name="ops-username"
-                               placeholder="新数据库专属用户"
-                               v-model="modelMysql.opsUsername"/>
-                        <label for="ops-username-ip">OPS USERNAME IP</label>
-                        <input class="pure-input-1" type="text" id="ops-username-ip" name="ops-username-ip"
-                               placeholder="新数据库专属用户"
-                               v-model="modelMysql.opsUsernameIP"/>
-                        <label for="ops-password">OPS PASSWORD</label>
-                        <input class="pure-input-1" type="password" id="ops-password" name="ops-password"
-                               placeholder="新数据库专属密码"
-                               v-model="modelMysql.opsPassword"/>
-                    </div>
-                </fieldset>
-            </div>
-
-            <div v-if="step==2"><!-- 系统管理员 -->
+            <div v-if="step==1"><!-- 系统管理员 -->
                 <fieldset>
                     <legend><h2>系统管理员</h2></legend>
                     <label for="login-name">LOGIN NAME</label>
