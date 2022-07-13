@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="purecss.min.css"/>
-    <script src="jquery.min.js"></script>
-    <script src="vue.global.prod.js"></script>
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="vue.global.prod.js"></script>
+    <!--  必须使用 qrcode.js 不能使用 qrcode.min.js 否则会溢出错误  -->
+    <script type="text/javascript" src="qrcode.js"></script>
     <title>初始化</title>
 </head>
 <body>
@@ -12,19 +14,10 @@
      style="width: 960px; position: absolute; margin: auto; left: 0; top: 0; right: 0; bottom: 0;">
     <div class="pure-u-1">
         <div class="pure-menu pure-menu-horizontal">
-            <a href="javascript:void(0);" class="pure-menu-heading pure-menu-link" @click="step=0">初始化</a>
+            <a href="javascript:void(0);" class="pure-menu-heading pure-menu-link" @click="step=0">数据库</a>
             <ul class="pure-menu-list">
-                <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==2}">
-                    <a href="javascript:void(0);" class="pure-menu-link" @click="step=2">系统管理员账号</a>
-                </li>
-                <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==3}">
-                    <a href="javascript:void(0);" class="pure-menu-link" @click="step=3">HTTP服务</a>
-                </li>
-                <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==4}">
-                    <a href="javascript:void(0);" class="pure-menu-link" @click="step=4">Redis</a>
-                </li>
-                <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==5}">
-                    <a href="javascript:void(0);" class="pure-menu-link" @click="step=5">MongoDB</a>
+                <li class="pure-menu-item" v-bind:class="{'pure-menu-selected':step==1}">
+                    <a href="javascript:void(0);" class="pure-menu-link" @click="step=1">系统管理员账号</a>
                 </li>
             </ul>
         </div>
@@ -38,7 +31,7 @@
                                v-bind:class="{'pure-button-disabled':statusInit.ing>0}">已完成设置，进行初始化！</a>
                         </div>
                         <div class="pure-u-1-4">
-                            <a class="pure-button">仅建立数据表</a>
+                            <a class="pure-button">建立数据表</a>
                         </div>
                     </div>
 
@@ -59,82 +52,66 @@
                     <input class="pure-input-1" type="password" id="password" name="password" placeholder="系统管理员密码"
                            v-model="modelAdmin.password"/>
                     <a class="pure-button" @click="generateToken()"
-                       v-if="modelAdmin.token.length==0||modelAdmin.tokenQRCode.length==0">生成时间令牌</a>
-                    <div v-if="modelAdmin.token.length>0&&modelAdmin.tokenQRCode.length>0">
+                       v-if="modelAdmin.token.length==0">生成时间令牌</a>
+                    <div v-show="modelAdmin.token.length>0">
                         <label for="token">TOTP TOKEN</label>
+                        <div id="qrcode" style="padding: 20px;"></div>
+                        <label for="token">如果无法扫描二维码，请使用下方的密钥：</label>
                         <input class="pure-input-1" type="text" id="token" name="token" placeholder="时间令牌" readonly=""
                                :value="modelAdmin.token"/>
-                        <img :src="modelAdmin.tokenQRCode"/>
+                        <a class="pure-button pure-button-primary" @click="saveAdmin()">保存</a>
                     </div>
                 </fieldset>
             </div>
-
-            <div v-if="step==3"><!-- http服务 -->
-                <fieldset>
-                    <legend><h2>HTTP 服务</h2></legend>
-                    <label for="http-host">HOST</label>
-                    <input class="pure-input-1" type="text" id="http-host" name="http-host" placeholder="HTTP服务监听地址"
-                           v-model="modelHttp.host"/>
-                    <label for="http-port">PORT</label>
-                    <input class="pure-input-1" type="text" id="http-port" name="http-port" placeholder="HTTP服务监听端口"
-                           v-model="modelHttp.port"/>
-                    <label for="http-secret-random" class="pure-checkbox">
-                        <input type="checkbox" id="http-secret-random" v-model="modelHttp.randomSecret"/>使用随机密钥
-                    </label>
-                    <div v-show="!modelHttp.randomSecret">
-                        <label for="http-secret">SECRET(HEX)</label>
-                        <input class="pure-input-1" type="text" id="http-secret" name="http-secret"
-                               placeholder="HTTP内置密钥"
-                               v-model="modelHttp.secretHex"/>
-                    </div>
-                </fieldset>
-            </div>
-
-            <div v-if="step==4">
-                <legend><h2>Redis</h2></legend>
-                <span>模块开发中</span>
-            </div>
-
-            <div v-if="step==5">
-                <legend><h2>MongoDB</h2></legend>
-                <span>模块开发中</span>
-            </div>
-
         </form>
     </div>
 </div>
 </body>
 <script>
-    const {createApp, reactive, toRefs, onMounted} = Vue;
+    function randomAuth() {
+        const base32table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+        let rb = new Uint8Array(16)
+        crypto.getRandomValues(rb)
+        const buffer = []
+        for (let i = 0; i < rb.length; i++) {
+            const idx = rb[i] % base32table.length
+            buffer.push(base32table[idx])
+        }
+        const auth = buffer.join('').toLowerCase()
+        buffer.splice(12, 0, ' ')
+        buffer.splice(8, 0, ' ')
+        buffer.splice(4, 0, ' ')
+        const show = buffer.join('').toLowerCase()
+        return {auth: auth, show: show}
+    }
+
+    function makeAuthQRCode(auth, username, imgId) {
+        const url = 'otpauth://totp/starpath:' + username +
+            '?algorithm=SHA1&digits=6&period=30&issuer=温州信通&secret=' + auth
+        new QRCode(document.getElementById(imgId), {
+            text: url,
+            width: 256,
+            height: 256,
+            render: 'table',
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H,
+        })
+    }
+
+    const {createApp, reactive, toRefs, onMounted} = Vue
     const data = reactive({
-        step: 1,
+        step: 0,
         statusInit: {
             ing: 0,
             msg: '正在初始化，请稍后...',
             log: '',
-        },
-        modelMysql: {
-            host: 'localhost',
-            port: 3306,
-            username: '',
-            password: '',
-            database: '',
-            createDatabase: false,
-            opsUsername: '',
-            opsUsernameIP: '%',
-            opsPassword: '',
         },
         modelAdmin: {
             loginName: 'admin',
             password: '',
             token: '',
             tokenQRCode: '',
-        },
-        modelHttp: {
-            host: '0.0.0.0',
-            port: 8999,
-            randomSecret: true,
-            secretHex: '',
         },
     })
     const app = createApp({
@@ -143,14 +120,17 @@
             })
 
             function generateToken() {
-                $.post({
-                    url: '/api/token', data: data.modelAdmin.loginName
-                }).then(function (result) {
-                    data.modelAdmin.token = result['token']
-                    data.modelAdmin.tokenQRCode = result['qrcode']
-                }).catch(function (err) {
-                    console.error(err)
-                })
+                // $.post({
+                //     url: '/api/token', data: data.modelAdmin.loginName
+                // }).then(function (result) {
+                //     data.modelAdmin.token = result['token']
+                //     data.modelAdmin.tokenQRCode = result['qrcode']
+                // }).catch(function (err) {
+                //     console.error(err)
+                // })
+                const {auth, show} = randomAuth()
+                data.modelAdmin.token = show
+                makeAuthQRCode(auth, data.modelAdmin.loginName, 'qrcode')
             }
 
             function initialize() {

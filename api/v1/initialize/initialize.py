@@ -261,43 +261,52 @@ def create_and_run():
             ''')
         return response.html(open(str(STATIC.joinpath('index.html')), 'rb').read())
 
-    @app.post('/api/token')
-    async def generate_token(req: Request):
-        login_name = req.body.decode()
-        token, img = generate_token_and_qrcode('星轨', login_name, '温州信通')
-        return response.json(dict(token=token, qrcode=img))
+    @app.post('/api/sync-database-structure')
+    async def sync_database_structure(req: Request):
+        raise NotImplemented()
 
-    @app.post('/api/initialization')
-    async def initialize(req: Request):
-        cfg = req.json
+    @app.post('/api/sync-database-data')
+    async def sync_database_data(req: Request):
+        raise NotImplemented()
 
-        import json
-        print(json.dumps(cfg, ensure_ascii=False, indent=2))
 
-        init = Initialization(cfg)
-        ret = await init.aio_mysql_connect()
-        if not ret:
-            return response.json(dict(code=1, message='aio_mysql_connect', logs=init.logs.getvalue()))
-        ret = await init.create_database()
-        if not ret:
-            return response.json(dict(code=2, message='create_database', logs=init.logs.getvalue()))
-        ret = await init.alchemy_connect()
-        if not ret:
-            return response.json(dict(code=3, message='alchemy_connect', logs=init.logs.getvalue()))
-        ret = await init.create_tables()
-        if not ret:
-            return response.json(dict(code=4, message='create_tables', logs=init.logs.getvalue()))
-        ret = await init.insert_admin()
-        if not ret:
-            return response.json(dict(code=5, message='insert_admin', logs=init.logs.getvalue()))
-        ret = init.write_config()
-        if not ret:
-            return response.json(dict(code=6, message='write_config', logs=init.logs.getvalue()))
-        ret = init.write_logs()
-        if not ret:
-            return response.json(dict(code=7, message='write_logs', logs=init.logs.getvalue()))
+    # @app.post('/api/token')
+    # async def generate_token(req: Request):
+    #     login_name = req.body.decode()
+    #     token, img = generate_token_and_qrcode('星轨', login_name, '温州信通')
+    #     return response.json(dict(token=token, qrcode=img))
 
-        return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
+    # @app.post('/api/initialization')
+    # async def initialize(req: Request):
+    #     cfg = req.json
+    #
+    #     import json
+    #     print(json.dumps(cfg, ensure_ascii=False, indent=2))
+    #
+    #     init = Initialization(cfg)
+    #     ret = await init.aio_mysql_connect()
+    #     if not ret:
+    #         return response.json(dict(code=1, message='aio_mysql_connect', logs=init.logs.getvalue()))
+    #     ret = await init.create_database()
+    #     if not ret:
+    #         return response.json(dict(code=2, message='create_database', logs=init.logs.getvalue()))
+    #     ret = await init.alchemy_connect()
+    #     if not ret:
+    #         return response.json(dict(code=3, message='alchemy_connect', logs=init.logs.getvalue()))
+    #     ret = await init.create_tables()
+    #     if not ret:
+    #         return response.json(dict(code=4, message='create_tables', logs=init.logs.getvalue()))
+    #     ret = await init.insert_admin()
+    #     if not ret:
+    #         return response.json(dict(code=5, message='insert_admin', logs=init.logs.getvalue()))
+    #     ret = init.write_config()
+    #     if not ret:
+    #         return response.json(dict(code=6, message='write_config', logs=init.logs.getvalue()))
+    #     ret = init.write_logs()
+    #     if not ret:
+    #         return response.json(dict(code=7, message='write_logs', logs=init.logs.getvalue()))
+    #
+    #     return response.json(dict(code=0, message='', logs=init.logs.getvalue()))
 
     app.run(
         '0.0.0.0',
